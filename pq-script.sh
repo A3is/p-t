@@ -36,6 +36,8 @@ while true; do
 EOF
 
     echo "        Script written by : A3is"
+    echo "        t.me/Ayoubsys_ir"
+    echo "        <-- For Proper And Ethical Use -->"
     echo
 
     # ---------- OS Check ----------
@@ -107,7 +109,7 @@ EOF
     }
 
     check_path " paqet-core" "/root/paqet-core"
-    check_path " config.yml (paqet-core)" "/root/paqet-core/config.yaml"
+    check_path " config.yml" "/root/paqet-core/config.yaml"
     check_path " paqet.service" "/etc/systemd/system/paqet.service"
 
     echo
