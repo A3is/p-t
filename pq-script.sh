@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ===============================
-# Paqet Tunnel - Initial Checker
+# Paqet Tunnel - Initial Checker |
 # ===============================
 
 while true; do
@@ -11,6 +11,15 @@ while true; do
     RED='\033[0;31m'
     GREEN='\033[0;32m'
     NC='\033[0m'
+
+
+
+    # ---------- Check root ----------
+    if [[ $EUID -ne 0 ]]; then
+        echo -e "${RED}Please run as root${NC}"
+        exit 1
+    fi
+
 
     # ---------- Banner ----------
     cat << "EOF"
@@ -60,6 +69,26 @@ EOF
         echo -e "${RED}- glibc 2.34 or newer${NC}"
         exit 1
     fi
+
+
+    # ---------- Install Prerequisites (First Run) ----------
+    REQUIRED_PACKAGES=(iperf3 nload vnstat net-tools)
+    MISSING_PACKAGES=()
+
+    for pkg in "${REQUIRED_PACKAGES[@]}"; do
+        if ! dpkg -s "$pkg" >/dev/null 2>&1; then
+            MISSING_PACKAGES+=("$pkg")
+        fi
+    done
+
+    if [ "${#MISSING_PACKAGES[@]}" -ne 0 ]; then
+        echo -e "${GREEN}Installing required packages: ${MISSING_PACKAGES[*]}${NC}"
+        apt update
+        apt install -y "${MISSING_PACKAGES[@]}"
+        echo -e "${GREEN}Prerequisites installed successfully.${NC}"
+        sleep 2
+    fi
+
 
     echo
     echo "----------------------------------------"
