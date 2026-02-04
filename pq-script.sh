@@ -36,8 +36,8 @@ while true; do
 EOF
 
     echo "        Script written by : A3is"
-    echo "        t.me/Ayoubsys_ir"
-    echo "        <-- For Proper And Ethical Use -->"
+    echo "        For Proper And Ethical Use."
+    echo "        V 1.0.0"
     echo
 
     # ---------- OS Check ----------
