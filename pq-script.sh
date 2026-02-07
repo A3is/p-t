@@ -231,16 +231,23 @@ EOF
             sudo iptables -t mangle -A OUTPUT -p tcp --sport 444 --tcp-flags RST RST -j DROP
 
             cat <<EOF > /etc/sysctl.d/99-max-performance.conf
-net.core.netdev_max_backlog = 250000
-net.core.rmem_max = 67108864
-net.core.wmem_max = 67108864
-net.core.rmem_default = 33554432
-net.core.wmem_default = 33554432
-net.core.somaxconn = 65535
-net.ipv4.tcp_max_syn_backlog = 30000
+net.core.netdev_max_backlog = 50000
+net.core.rmem_max = 33554432       # 32MB
+net.core.wmem_max = 33554432       # 32MB
+net.core.rmem_default = 1048576    # 1MB
+net.core.wmem_default = 1048576    # 1MB
+net.core.somaxconn = 8192
+net.ipv4.tcp_max_syn_backlog = 16384
 net.ipv4.ip_local_port_range = 1024 65535
 net.ipv4.tcp_slow_start_after_idle = 0
-net.ipv4.udp_mem = 65536 131072 262144
+net.ipv4.udp_mem = 131072 262144 524288
+net.ipv4.tcp_keepalive_time = 300
+net.ipv4.tcp_keepalive_intvl = 60
+net.ipv4.tcp_keepalive_probes = 5
+net.ipv4.tcp_fin_timeout = 15
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.tcp_tw_recycle = 0
+net.ipv4.tcp_timestamps = 1
 EOF
 
             sysctl --system
@@ -329,7 +336,7 @@ LimitNOFILE=1000000
 CPUSchedulingPolicy=fifo
 CPUSchedulingPriority=99
 Nice=-20
-
+8G4xV9miuQrWK2up
 [Install]
 WantedBy=multi-user.target
 EOF
@@ -341,16 +348,23 @@ EOF
             systemctl start paqet
 
             cat <<EOF > /etc/sysctl.d/99-max-performance.conf
-net.core.netdev_max_backlog = 250000
-net.core.rmem_max = 67108864
-net.core.wmem_max = 67108864
-net.core.rmem_default = 33554432
-net.core.wmem_default = 33554432
-net.core.somaxconn = 65535
-net.ipv4.tcp_max_syn_backlog = 30000
+net.core.netdev_max_backlog = 50000
+net.core.rmem_max = 33554432       # 32MB
+net.core.wmem_max = 33554432       # 32MB
+net.core.rmem_default = 1048576    # 1MB
+net.core.wmem_default = 1048576    # 1MB
+net.core.somaxconn = 8192
+net.ipv4.tcp_max_syn_backlog = 16384
 net.ipv4.ip_local_port_range = 1024 65535
 net.ipv4.tcp_slow_start_after_idle = 0
-net.ipv4.udp_mem = 65536 131072 262144
+net.ipv4.udp_mem = 131072 262144 524288
+net.ipv4.tcp_keepalive_time = 300
+net.ipv4.tcp_keepalive_intvl = 60
+net.ipv4.tcp_keepalive_probes = 5
+net.ipv4.tcp_fin_timeout = 15
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.tcp_tw_recycle = 0
+net.ipv4.tcp_timestamps = 1
 EOF
 
             sysctl --system
