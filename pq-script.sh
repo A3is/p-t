@@ -169,18 +169,23 @@ network:
   ipv4:
     addr: "$SERVER_IP:888"
     router_mac: "$ROUTER_MAC"
+  tcp:
+    local_flag: ["PA"]
 transport:
   protocol: "kcp"
   kcp:
-    block: "none"
     key: "y0ur-32-Pa$$-@@@-key-1234"
+    block: "aes-128-gcm"
+    mode: "fast2"
     mtu: 1350
     sndwnd: 1024
     rcvwnd: 1024
-    nodelay: 1
-    interval: 10
-    resend: 1
+    nodelay: true
+    interval: 20
+    resend: 2
     nc: 1
+    smuxbuf: 67108864
+    streambuf: 2097152
 EOF
             chmod 600 /root/paqet-core/config.yaml
             chown root:root /root/paqet-core/config.yaml
@@ -199,8 +204,8 @@ EOF
             cat > /etc/systemd/system/paqet.service << EOF
 [Unit]
 Description=Paqet server Service kharej
-After=network.target
-StartLimitIntervalSec=0
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
@@ -210,11 +215,12 @@ ExecStart=$EXEC_FILE run -c /root/paqet-core/config.yaml
 Restart=always
 RestartSec=3
 StartLimitBurst=0
-LimitNOFILE=1000000
-
+StartLimitIntervalSec=0
+LimitNOFILE=1048576
 CPUSchedulingPolicy=fifo
 CPUSchedulingPriority=99
 Nice=-20
+OOMScoreAdjust=-1000
 
 [Install]
 WantedBy=multi-user.target
@@ -288,20 +294,26 @@ network:
   ipv4:
     addr: "$SERVER_IP:0"
     router_mac: "$ROUTER_MAC"
+  tcp:
+    local_flag: ["PA"]
+    remote_flag: ["PA"]
 server:
   addr: "$KHAREJ_SERVER_IP:888"
 transport:
   protocol: "kcp"
   kcp:
-    block: "none"
     key: "y0ur-32-Pa$$-@@@-key-1234"
+    block: "aes-128-gcm"
+    mode: "fast2"
     mtu: 1350
     sndwnd: 1024
     rcvwnd: 1024
-    nodelay: 1
-    interval: 10
-    resend: 1
+    nodelay: true
+    interval: 20
+    resend: 2
     nc: 1
+    smuxbuf: 67108864
+    streambuf: 2097152
 EOF
             chmod 600 /root/paqet-core/config.yaml
             chown root:root /root/paqet-core/config.yaml
@@ -320,8 +332,8 @@ EOF
             cat > /etc/systemd/system/paqet.service << EOF
 [Unit]
 Description=Paqet Client Service iran
-After=network.target
-StartLimitIntervalSec=0
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
@@ -331,12 +343,14 @@ ExecStart=$EXEC_FILE run -c /root/paqet-core/config.yaml
 Restart=always
 RestartSec=3
 StartLimitBurst=0
-LimitNOFILE=1000000
+StartLimitIntervalSec=0
 
+LimitNOFILE=1048576
 CPUSchedulingPolicy=fifo
 CPUSchedulingPriority=99
 Nice=-20
-8G4xV9miuQrWK2up
+OOMScoreAdjust=-1000
+
 [Install]
 WantedBy=multi-user.target
 EOF
@@ -348,23 +362,16 @@ EOF
             systemctl start paqet
 
             cat <<EOF > /etc/sysctl.d/99-max-performance.conf
-net.core.netdev_max_backlog = 50000
-net.core.rmem_max = 33554432       # 32MB
-net.core.wmem_max = 33554432       # 32MB
-net.core.rmem_default = 1048576    # 1MB
-net.core.wmem_default = 1048576    # 1MB
-net.core.somaxconn = 8192
-net.ipv4.tcp_max_syn_backlog = 16384
+net.core.netdev_max_backlog = 250000
+net.core.rmem_max = 67108864
+net.core.wmem_max = 67108864
+net.core.rmem_default = 33554432
+net.core.wmem_default = 33554432
+net.core.somaxconn = 65535
+net.ipv4.tcp_max_syn_backlog = 30000
 net.ipv4.ip_local_port_range = 1024 65535
 net.ipv4.tcp_slow_start_after_idle = 0
-net.ipv4.udp_mem = 131072 262144 524288
-net.ipv4.tcp_keepalive_time = 300
-net.ipv4.tcp_keepalive_intvl = 60
-net.ipv4.tcp_keepalive_probes = 5
-net.ipv4.tcp_fin_timeout = 15
-net.ipv4.tcp_tw_reuse = 1
-net.ipv4.tcp_tw_recycle = 0
-net.ipv4.tcp_timestamps = 1
+net.ipv4.udp_mem = 65536 131072 262144
 EOF
 
             sysctl --system
