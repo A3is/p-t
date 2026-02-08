@@ -215,7 +215,6 @@ ExecStart=$EXEC_FILE run -c /root/paqet-core/config.yaml
 Restart=always
 RestartSec=3
 StartLimitBurst=0
-StartLimitIntervalSec=0
 LimitNOFILE=1048576
 CPUSchedulingPolicy=fifo
 CPUSchedulingPriority=99
@@ -343,8 +342,6 @@ ExecStart=$EXEC_FILE run -c /root/paqet-core/config.yaml
 Restart=always
 RestartSec=3
 StartLimitBurst=0
-StartLimitIntervalSec=0
-
 LimitNOFILE=1048576
 CPUSchedulingPolicy=fifo
 CPUSchedulingPriority=99
