@@ -176,7 +176,7 @@ transport:
   kcp:
     key: "y0ur-32-Pa$$-@@@-key-1234"
     mode: "fast2"
-    block: "aes-128"
+    block: "aes"
     mtu: 1350
     sndwnd: 1024
     rcvwnd: 1024
@@ -303,7 +303,7 @@ transport:
   kcp:
     key: "y0ur-32-Pa$$-@@@-key-1234"
     mode: "fast2"
-    block: "aes-128"
+    block: "aes"
     mtu: 1350
     sndwnd: 1024
     rcvwnd: 1024
