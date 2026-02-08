@@ -2,3 +2,5 @@ cd /root
 curl -L -o pq-script.sh https://raw.githubusercontent.com/A3is/p-t/master/pq-script.sh
 chmod +x pq-script.sh
 bash pq-script.sh
+
+sudo journalctl -u paqet.service -b --no-pager -n 50
