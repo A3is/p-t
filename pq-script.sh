@@ -287,8 +287,10 @@ EOF
 role: "client"
 log:
   level: "error"
-socks5:
-  - listen: "127.0.0.1:1080"
+forward:
+  - listen: "0.0.0.0:1080"
+    target: "127.0.0.1:1080"
+    protocol: "tcp"
 network:
   interface: "$SERVER_INTERFACE"
   ipv4:
