@@ -5,7 +5,7 @@
 # ===============================
 
 while true; do
-    clear
+    clear 
 
     # Colors
     RED='\033[0;31m'
@@ -173,9 +173,10 @@ network:
     local_flag: ["PA"]
 transport:
   protocol: "kcp"
+  conn: 1
   kcp:
-    key: "y0ur-32-Pa$$-@@@-key-1234"
-    block: "aes"
+    key: "81c994902cd2e0787d2a09cf8921da1c27f4a0656ba606e56b7327c3b9a8f492"
+    block: "aes-128-gcm"
     mode: "fast2"
     mtu: 1350
     sndwnd: 1024
@@ -300,9 +301,10 @@ server:
   addr: "$KHAREJ_SERVER_IP:888"
 transport:
   protocol: "kcp"
+  conn: 1
   kcp:
-    key: "y0ur-32-Pa$$-@@@-key-1234"
-    block: "aes"
+    key: "81c994902cd2e0787d2a09cf8921da1c27f4a0656ba606e56b7327c3b9a8f492"
+    block: "aes-128-gcm"
     mode: "fast2"
     mtu: 1350
     sndwnd: 1024
