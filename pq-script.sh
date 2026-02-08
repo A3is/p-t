@@ -180,7 +180,7 @@ transport:
     mtu: 1350
     sndwnd: 1024
     rcvwnd: 1024
-    nodelay: true
+    nodelay: 1
     interval: 20
     resend: 2
     nc: 1
@@ -308,7 +308,7 @@ transport:
     mtu: 1350
     sndwnd: 1024
     rcvwnd: 1024
-    nodelay: true
+    nodelay: 1
     interval: 20
     resend: 2
     nc: 1
