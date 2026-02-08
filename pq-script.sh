@@ -203,9 +203,9 @@ EOF
 
             cat > /etc/systemd/system/paqet.service << EOF
 [Unit]
-Description=Paqet server Service kharej
-After=network-online.target
-Wants=network-online.target
+Description=Paqet Client Service iran
+After=network.target
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
@@ -219,7 +219,6 @@ LimitNOFILE=1048576
 CPUSchedulingPolicy=fifo
 CPUSchedulingPriority=99
 Nice=-20
-OOMScoreAdjust=-1000
 
 [Install]
 WantedBy=multi-user.target
@@ -331,8 +330,8 @@ EOF
             cat > /etc/systemd/system/paqet.service << EOF
 [Unit]
 Description=Paqet Client Service iran
-After=network-online.target
-Wants=network-online.target
+After=network.target
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
@@ -346,7 +345,6 @@ LimitNOFILE=1048576
 CPUSchedulingPolicy=fifo
 CPUSchedulingPriority=99
 Nice=-20
-OOMScoreAdjust=-1000
 
 [Install]
 WantedBy=multi-user.target
