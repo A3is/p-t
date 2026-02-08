@@ -286,7 +286,7 @@ EOF
             cat > /root/paqet-core/config.yaml << EOF
 role: "client"
 log:
-  level: "error" 
+  level: "error"
 forward:
   - listen: "0.0.0.0:5201"
     target: "127.0.0.1:5201"
