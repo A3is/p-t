@@ -231,9 +231,9 @@ EOF
             systemctl enable paqet
             systemctl start paqet
 
-            sudo iptables -t raw -A PREROUTING -p tcp --dport 444 -j NOTRACK
-            sudo iptables -t raw -A OUTPUT -p tcp --sport 444 -j NOTRACK
-            sudo iptables -t mangle -A OUTPUT -p tcp --sport 444 --tcp-flags RST RST -j DROP
+            sudo iptables -t raw -A PREROUTING -p tcp --dport 888 -j NOTRACK
+            sudo iptables -t raw -A OUTPUT -p tcp --sport 888 -j NOTRACK
+            sudo iptables -t mangle -A OUTPUT -p tcp --sport 888 --tcp-flags RST RST -j DROP
 
             cat <<EOF > /etc/sysctl.d/99-max-performance.conf
 net.core.netdev_max_backlog = 50000
