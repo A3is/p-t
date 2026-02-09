@@ -287,10 +287,8 @@ EOF
 role: "client"
 log:
   level: "error"
-forward:
-  - listen: "0.0.0.0:5201"
-    target: "127.0.0.1:5201"
-    protocol: "tcp"
+socks5:
+  - listen: "127.0.0.1:1080"
 network:
   interface: "$SERVER_INTERFACE"
   ipv4:
@@ -305,7 +303,7 @@ transport:
   protocol: "kcp"
   conn: 1
   kcp:
-    key: "81c994902cd2e0787d2a09cf8921da1c27f4a0656ba606e56b7327c3b9a8f492"
+    key: "81c994902cdC2e0787d2aT9cf8921daM1c2727c3b9a8f4F92"
     block: "aes-128-gcm"
     mode: "fast2"
     mtu: 1350
