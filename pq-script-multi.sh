@@ -624,10 +624,11 @@ EOF
 
     read -rp "Select option: " SEL
     if [[ "$SEL" =~ ^[0-9]+$ ]] && (( SEL >=1 && SEL <= ${#SERVICES[@]} )); then
-        # حذف .service از اسم برای پیدا کردن config
+        # SERVICE_NAME دقیقا اسم فایل سرویس بدون وضعیت
         SERVICE_NAME="${SERVICES[$((SEL-1))]}"
+        # حذف پسوند .service
         BASE_NAME="${SERVICE_NAME%.service}"
-        CONFIG_FILE="/root/paqet-core/config-iran-${BASE_NAME#paqet-iran-}.yaml"
+        CONFIG_FILE="/root/paqet-core/config-iran-${BASE_NAME}.yaml"
 
         if [[ ! -f "$CONFIG_FILE" ]]; then
             echo -e "${RED}Config file not found: $CONFIG_FILE${NC}"
