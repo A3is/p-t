@@ -96,6 +96,7 @@ EOF
     echo "----------------------------------------"
     echo
 
+
 # ---------- Path Checks ----------
 check_path() {
     local label="$1"
@@ -110,17 +111,9 @@ check_path() {
         fi
 
     elif [[ "$label" == "ConfigFile" ]]; then
-        FILES=()
-        for f in /root/paqet-core/*.yaml 2>/dev/null; do
-            [[ -f "$f" ]] || continue
-            name=$(basename "$f")
-            # حذف پیشوند config- اگر وجود داشته باشد
-            display_name=${name#config-}
-            FILES+=("$display_name")
-        done
-
-        if [[ "${#FILES[@]}" -gt 0 ]]; then
-            echo -e "$label : ${GREEN}$(IFS=- ; echo "${FILES[*]}")${NC}"
+        FILES=$(ls /root/paqet-core/*.yaml 2>/dev/null | xargs -n1 basename | tr '\n' '-' | sed 's/-$//')
+        if [[ -n "$FILES" ]]; then
+            echo -e "$label : ${GREEN}$FILES${NC}"
         else
             echo -e "$label : ${RED}Not exists${NC}"
         fi
@@ -130,10 +123,8 @@ check_path() {
         for f in /etc/systemd/system/paqet-kharej-*.service /etc/systemd/system/paqet-iran-*.service; do
             [[ -e "$f" ]] || continue
             name=$(basename "$f")
-            # حذف پیشوند paqet- اگر وجود داشته باشد
-            display_name=${name#paqet-}
-            status=$(systemctl is-active "$name" 2>/dev/null || echo "inactive")
-            SERVICES+=("${display_name} (${status})")
+            status=$(systemctl is-active "$name")
+            SERVICES+=("${name} (${status})")
         done
 
         if [[ "${#SERVICES[@]}" -gt 0 ]]; then
@@ -157,9 +148,6 @@ check_path() {
 check_path "paqet-core"
 check_path "ConfigFile"
 check_path "PaqetService"
-
-
-
 
 
     echo
@@ -502,31 +490,136 @@ EOF
             ;;
 
         4)
-            systemctl daemon-reload
-            systemctl restart paqet
-            echo -e "${GREEN}Service restarted.${NC}"
+            echo
+            echo "Select Paqet service to restart:"
+            mapfile -t SERVICES < <(ls /etc/systemd/system/paqet-*.service 2>/dev/null | xargs -n1 basename)
+            if [[ "${#SERVICES[@]}" -eq 0 ]]; then
+                echo -e "${RED}No Paqet services found.${NC}"
+                sleep 2
+                continue
+            fi
+
+            # نمایش لیست با شماره
+            for i in "${!SERVICES[@]}"; do
+                echo "$((i+1))- ${SERVICES[$i]}"
+            done
+            [[ "${#SERVICES[@]}" -gt 1 ]] && echo "$(( ${#SERVICES[@]} + 1 ))- Restart All"
+
+            read -rp "Select option: " SEL
+            if [[ "$SEL" =~ ^[0-9]+$ ]]; then
+                if (( SEL >=1 && SEL <= ${#SERVICES[@]} )); then
+                    systemctl restart "${SERVICES[$((SEL-1))]}"
+                    echo -e "${GREEN}${SERVICES[$((SEL-1))]} restarted.${NC}"
+                elif (( SEL == ${#SERVICES[@]} + 1 )); then
+                    for svc in "${SERVICES[@]}"; do
+                        systemctl restart "$svc"
+                    done
+                    echo -e "${GREEN}All Paqet services restarted.${NC}"
+                else
+                    echo -e "${RED}Invalid selection.${NC}"
+                fi
+            else
+                echo -e "${RED}Invalid input.${NC}"
+            fi
             sleep 2
             continue
             ;;
 
         5)
-            systemctl status paqet
+            echo
+            echo "Select Paqet service to show status:"
+            mapfile -t SERVICES < <(ls /etc/systemd/system/paqet-*.service 2>/dev/null | xargs -n1 basename)
+            if [[ "${#SERVICES[@]}" -eq 0 ]]; then
+                echo -e "${RED}No Paqet services found.${NC}"
+                sleep 2
+                continue
+            fi
+
+            for i in "${!SERVICES[@]}"; do
+                echo "$((i+1))- ${SERVICES[$i]}"
+            done
+
+            read -rp "Select option: " SEL
+            if [[ "$SEL" =~ ^[0-9]+$ ]] && (( SEL >=1 && SEL <= ${#SERVICES[@]} )); then
+                systemctl status "${SERVICES[$((SEL-1))]}" --no-pager
+            else
+                echo -e "${RED}Invalid selection.${NC}"
+            fi
             read -rp "Press enter to return to menu..."
             continue
             ;;
 
         6)
-            curl -v https://google.com --proxy socks5h://127.0.0.1:1080
+            echo
+            echo "Select Paqet client service to test:"
+            mapfile -t SERVICES < <(ls /etc/systemd/system/paqet-iran-*.service 2>/dev/null | xargs -n1 basename)
+            if [[ "${#SERVICES[@]}" -eq 0 ]]; then
+                echo -e "${RED}No Paqet client services found.${NC}"
+                sleep 2
+                continue
+            fi
+
+            for i in "${!SERVICES[@]}"; do
+                echo "$((i+1))- ${SERVICES[$i]}"
+            done
+
+            read -rp "Select option: " SEL
+            if [[ "$SEL" =~ ^[0-9]+$ ]] && (( SEL >=1 && SEL <= ${#SERVICES[@]} )); then
+                CONFIG_FILE="/root/paqet-core/config-iran-${SERVICES[$((SEL-1))]#paqet-iran-}.yaml"
+                if [[ ! -f "$CONFIG_FILE" ]]; then
+                    echo -e "${RED}Config file not found: $CONFIG_FILE${NC}"
+                    sleep 2
+                    continue
+                fi
+                PORT=$(grep -Po '(?<=listen: ")[^:]+:\K[0-9]+' "$CONFIG_FILE")
+                if [[ -z "$PORT" ]]; then
+                    echo -e "${RED}Cannot extract port from config.${NC}"
+                    sleep 2
+                    continue
+                fi
+                echo -e "${GREEN}Testing service on port $PORT...${NC}"
+                curl -v https://google.com --proxy "socks5h://127.0.0.1:${PORT}"
+            else
+                echo -e "${RED}Invalid selection.${NC}"
+            fi
             read -rp "Press enter to return to menu..."
             continue
             ;;
 
         7)
-            systemctl stop paqet
-            rm -f /etc/systemd/system/paqet.service
-            rm -f /root/paqet-core/config.yaml
+            echo
+            echo "Select Paqet service to delete:"
+            mapfile -t SERVICES < <(ls /etc/systemd/system/paqet-*.service 2>/dev/null | xargs -n1 basename)
+            if [[ "${#SERVICES[@]}" -eq 0 ]]; then
+                echo -e "${RED}No Paqet services found.${NC}"
+                sleep 2
+                continue
+            fi
+
+            for i in "${!SERVICES[@]}"; do
+                echo "$((i+1))- ${SERVICES[$i]}"
+            done
+            [[ "${#SERVICES[@]}" -gt 1 ]] && echo "$(( ${#SERVICES[@]} + 1 ))- Delete All"
+
+            read -rp "Select option: " SEL
+            if [[ "$SEL" =~ ^[0-9]+$ ]]; then
+                if (( SEL >=1 && SEL <= ${#SERVICES[@]} )); then
+                    systemctl stop "${SERVICES[$((SEL-1))]}"
+                    rm -f "/etc/systemd/system/${SERVICES[$((SEL-1))]}"
+                    echo -e "${GREEN}${SERVICES[$((SEL-1))]} deleted.${NC}"
+                elif (( SEL == ${#SERVICES[@]} + 1 )); then
+                    for svc in "${SERVICES[@]}"; do
+                        systemctl stop "$svc"
+                        rm -f "/etc/systemd/system/$svc"
+                    done
+                    echo -e "${GREEN}All Paqet services deleted.${NC}"
+                else
+                    echo -e "${RED}Invalid selection.${NC}"
+                fi
+            else
+                echo -e "${RED}Invalid input.${NC}"
+            fi
             systemctl daemon-reload
-            echo -e "${GREEN}Paqet service stopped and config deleted, core remains intact.${NC}"
             sleep 2
             continue
             ;;
