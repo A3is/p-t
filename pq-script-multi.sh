@@ -505,17 +505,22 @@ EOF
         4)
             echo
             echo "Select Paqet service to restart:"
-            mapfile -t SERVICES < <(ls /etc/systemd/system/paqet-*.service 2>/dev/null | xargs -n1 basename)
+            # لیست سرویس‌ها بدون خطا
+            shopt -s nullglob
+            SERVICES=(/etc/systemd/system/paqet-*.service)
+            shopt -u nullglob
+
             if [[ "${#SERVICES[@]}" -eq 0 ]]; then
                 echo -e "${RED}No Paqet services found.${NC}"
                 sleep 2
                 continue
             fi
 
-            # نمایش لیست با شماره
             for i in "${!SERVICES[@]}"; do
-                echo "$((i+1))- ${SERVICES[$i]}"
+                SERVICES[i]=$(basename "${SERVICES[i]}")
+                echo "$((i+1))- ${SERVICES[i]}"
             done
+
             [[ "${#SERVICES[@]}" -gt 1 ]] && echo "$(( ${#SERVICES[@]} + 1 ))- Restart All"
 
             read -rp "Select option: " SEL
@@ -541,7 +546,10 @@ EOF
         5)
             echo
             echo "Select Paqet service to show status:"
-            mapfile -t SERVICES < <(ls /etc/systemd/system/paqet-*.service 2>/dev/null | xargs -n1 basename)
+            shopt -s nullglob
+            SERVICES=(/etc/systemd/system/paqet-*.service)
+            shopt -u nullglob
+
             if [[ "${#SERVICES[@]}" -eq 0 ]]; then
                 echo -e "${RED}No Paqet services found.${NC}"
                 sleep 2
@@ -549,7 +557,8 @@ EOF
             fi
 
             for i in "${!SERVICES[@]}"; do
-                echo "$((i+1))- ${SERVICES[$i]}"
+                SERVICES[i]=$(basename "${SERVICES[i]}")
+                echo "$((i+1))- ${SERVICES[i]}"
             done
 
             read -rp "Select option: " SEL
@@ -565,7 +574,10 @@ EOF
         6)
             echo
             echo "Select Paqet client service to test:"
-            mapfile -t SERVICES < <(ls /etc/systemd/system/paqet-iran-*.service 2>/dev/null | xargs -n1 basename)
+            shopt -s nullglob
+            SERVICES=(/etc/systemd/system/paqet-iran-*.service)
+            shopt -u nullglob
+
             if [[ "${#SERVICES[@]}" -eq 0 ]]; then
                 echo -e "${RED}No Paqet client services found.${NC}"
                 sleep 2
@@ -573,7 +585,8 @@ EOF
             fi
 
             for i in "${!SERVICES[@]}"; do
-                echo "$((i+1))- ${SERVICES[$i]}"
+                SERVICES[i]=$(basename "${SERVICES[i]}")
+                echo "$((i+1))- ${SERVICES[i]}"
             done
 
             read -rp "Select option: " SEL
@@ -602,7 +615,10 @@ EOF
         7)
             echo
             echo "Select Paqet service to delete:"
-            mapfile -t SERVICES < <(ls /etc/systemd/system/paqet-*.service 2>/dev/null | xargs -n1 basename)
+            shopt -s nullglob
+            SERVICES=(/etc/systemd/system/paqet-*.service)
+            shopt -u nullglob
+
             if [[ "${#SERVICES[@]}" -eq 0 ]]; then
                 echo -e "${RED}No Paqet services found.${NC}"
                 sleep 2
@@ -610,29 +626,31 @@ EOF
             fi
 
             for i in "${!SERVICES[@]}"; do
-                echo "$((i+1))- ${SERVICES[$i]}"
+                SERVICES[i]=$(basename "${SERVICES[i]}")
+                echo "$((i+1))- ${SERVICES[i]}"
             done
             [[ "${#SERVICES[@]}" -gt 1 ]] && echo "$(( ${#SERVICES[@]} + 1 ))- Delete All"
 
             read -rp "Select option: " SEL
+
+            delete_service() {
+                local svc="$1"
+                local cfg=""
+                systemctl stop "$svc" 2>/dev/null
+                rm -f "/etc/systemd/system/$svc"
+
+                # استخراج نام config از سرویس
+                if [[ "$svc" =~ paqet-kharej-(.+)\.service ]]; then
+                    cfg="/root/paqet-core/config-kharej-${BASH_REMATCH[1]}.yaml"
+                elif [[ "$svc" =~ paqet-iran-(.+)\.service ]]; then
+                    cfg="/root/paqet-core/config-iran-${BASH_REMATCH[1]}.yaml"
+                fi
+
+                [[ -n "$cfg" && -f "$cfg" ]] && rm -f "$cfg"
+                echo -e "${GREEN}$svc and its config deleted.${NC}"
+            }
+
             if [[ "$SEL" =~ ^[0-9]+$ ]]; then
-                delete_service() {
-                    local svc="$1"
-                    local cfg=""
-                    systemctl stop "$svc"
-                    rm -f "/etc/systemd/system/$svc"
-
-                    # تعیین مسیر کانفیگ بر اساس نام سرویس
-                    if [[ "$svc" =~ paqet-kharej-(.+)\.service ]]; then
-                        cfg="/root/paqet-core/config-kharej-${BASH_REMATCH[1]}.yaml"
-                    elif [[ "$svc" =~ paqet-iran-(.+)\.service ]]; then
-                        cfg="/root/paqet-core/config-iran-${BASH_REMATCH[1]}.yaml"
-                    fi
-
-                    [[ -n "$cfg" && -f "$cfg" ]] && rm -f "$cfg"
-                    echo -e "${GREEN}$svc and its config deleted.${NC}"
-                }
-
                 if (( SEL >=1 && SEL <= ${#SERVICES[@]} )); then
                     delete_service "${SERVICES[$((SEL-1))]}"
                 elif (( SEL == ${#SERVICES[@]} + 1 )); then
@@ -651,6 +669,7 @@ EOF
             sleep 2
             continue
             ;;
+
 
 
         0)
