@@ -505,22 +505,24 @@ EOF
         4)
             echo
             echo "Select Paqet service to restart:"
-            # لیست سرویس‌ها بدون خطا
             shopt -s nullglob
-            SERVICES=(/etc/systemd/system/paqet-*.service)
+            FILES=(/etc/systemd/system/paqet-*.service)
             shopt -u nullglob
 
-            if [[ "${#SERVICES[@]}" -eq 0 ]]; then
+            if [[ "${#FILES[@]}" -eq 0 ]]; then
                 echo -e "${RED}No Paqet services found.${NC}"
                 sleep 2
                 continue
             fi
 
-            for i in "${!SERVICES[@]}"; do
-                SERVICES[i]=$(basename "${SERVICES[i]}")
-                echo "$((i+1))- ${SERVICES[i]}"
+            SERVICES=()
+            for f in "${FILES[@]}"; do
+                SERVICES+=("$(basename "$f")")
             done
 
+            for i in "${!SERVICES[@]}"; do
+                echo "$((i+1))- ${SERVICES[i]}"
+            done
             [[ "${#SERVICES[@]}" -gt 1 ]] && echo "$(( ${#SERVICES[@]} + 1 ))- Restart All"
 
             read -rp "Select option: " SEL
@@ -547,17 +549,21 @@ EOF
             echo
             echo "Select Paqet service to show status:"
             shopt -s nullglob
-            SERVICES=(/etc/systemd/system/paqet-*.service)
+            FILES=(/etc/systemd/system/paqet-*.service)
             shopt -u nullglob
 
-            if [[ "${#SERVICES[@]}" -eq 0 ]]; then
+            if [[ "${#FILES[@]}" -eq 0 ]]; then
                 echo -e "${RED}No Paqet services found.${NC}"
                 sleep 2
                 continue
             fi
 
+            SERVICES=()
+            for f in "${FILES[@]}"; do
+                SERVICES+=("$(basename "$f")")
+            done
+
             for i in "${!SERVICES[@]}"; do
-                SERVICES[i]=$(basename "${SERVICES[i]}")
                 echo "$((i+1))- ${SERVICES[i]}"
             done
 
@@ -575,17 +581,21 @@ EOF
             echo
             echo "Select Paqet client service to test:"
             shopt -s nullglob
-            SERVICES=(/etc/systemd/system/paqet-iran-*.service)
+            FILES=(/etc/systemd/system/paqet-iran-*.service)
             shopt -u nullglob
 
-            if [[ "${#SERVICES[@]}" -eq 0 ]]; then
+            if [[ "${#FILES[@]}" -eq 0 ]]; then
                 echo -e "${RED}No Paqet client services found.${NC}"
                 sleep 2
                 continue
             fi
 
+            SERVICES=()
+            for f in "${FILES[@]}"; do
+                SERVICES+=("$(basename "$f")")
+            done
+
             for i in "${!SERVICES[@]}"; do
-                SERVICES[i]=$(basename "${SERVICES[i]}")
                 echo "$((i+1))- ${SERVICES[i]}"
             done
 
@@ -616,17 +626,21 @@ EOF
             echo
             echo "Select Paqet service to delete:"
             shopt -s nullglob
-            SERVICES=(/etc/systemd/system/paqet-*.service)
+            FILES=(/etc/systemd/system/paqet-*.service)
             shopt -u nullglob
 
-            if [[ "${#SERVICES[@]}" -eq 0 ]]; then
+            if [[ "${#FILES[@]}" -eq 0 ]]; then
                 echo -e "${RED}No Paqet services found.${NC}"
                 sleep 2
                 continue
             fi
 
+            SERVICES=()
+            for f in "${FILES[@]}"; do
+                SERVICES+=("$(basename "$f")")
+            done
+
             for i in "${!SERVICES[@]}"; do
-                SERVICES[i]=$(basename "${SERVICES[i]}")
                 echo "$((i+1))- ${SERVICES[i]}"
             done
             [[ "${#SERVICES[@]}" -gt 1 ]] && echo "$(( ${#SERVICES[@]} + 1 ))- Delete All"
@@ -639,7 +653,7 @@ EOF
                 systemctl stop "$svc" 2>/dev/null
                 rm -f "/etc/systemd/system/$svc"
 
-                # استخراج نام config از سرویس
+                # استخراج config مرتبط
                 if [[ "$svc" =~ paqet-kharej-(.+)\.service ]]; then
                     cfg="/root/paqet-core/config-kharej-${BASH_REMATCH[1]}.yaml"
                 elif [[ "$svc" =~ paqet-iran-(.+)\.service ]]; then
@@ -669,6 +683,7 @@ EOF
             sleep 2
             continue
             ;;
+
 
 
 
