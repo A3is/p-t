@@ -149,6 +149,7 @@ EOF
             echo "Configuring Paqet service for KharejServer..."
             echo
 
+
             # دریافت نام سرور
             while true; do
                 read -rp "Enter server name (English only): " NAME
@@ -249,7 +250,6 @@ Nice=-20
 [Install]
 WantedBy=multi-user.target
 EOF
-
             chmod 644 "$SERVICE_FILE"
             chown root:root "$SERVICE_FILE"
 
@@ -261,7 +261,33 @@ EOF
             iptables -t raw -A OUTPUT -p tcp --sport "$TunnelPort" -j NOTRACK
             iptables -t mangle -A OUTPUT -p tcp --sport "$TunnelPort" --tcp-flags RST RST -j DROP
 
-            echo -e "${GREEN}Paqet Kharej server configured successfully.${NC}"
+            cat <<EOF > /etc/sysctl.d/99-max-performance.conf
+net.core.netdev_max_backlog = 50000
+net.core.rmem_max = 33554432       # 32MB
+net.core.wmem_max = 33554432       # 32MB
+net.core.rmem_default = 1048576    # 1MB
+net.core.wmem_default = 1048576    # 1MB
+net.core.somaxconn = 8192
+net.ipv4.tcp_max_syn_backlog = 16384
+net.ipv4.ip_local_port_range = 1024 65535
+net.ipv4.tcp_slow_start_after_idle = 0
+net.ipv4.udp_mem = 131072 262144 524288
+net.ipv4.tcp_keepalive_time = 300
+net.ipv4.tcp_keepalive_intvl = 60
+net.ipv4.tcp_keepalive_probes = 5
+net.ipv4.tcp_fin_timeout = 15
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.tcp_tw_recycle = 0
+net.ipv4.tcp_timestamps = 1
+EOF
+
+            sysctl --system
+            ifconfig "$SERVER_INTERFACE" txqueuelen 20000
+            sync; echo 3 > /proc/sys/vm/drop_caches
+            systemctl daemon-reload
+            systemctl restart paqet
+
+            echo -e "${GREEN}Paqet server configured successfully.${NC}"
             sleep 3
             continue
             ;;
@@ -397,7 +423,30 @@ EOF
             systemctl enable "paqet-iran-${NAME}"
             systemctl start "paqet-iran-${NAME}"
 
-            echo -e "${GREEN}Paqet Iran client configured successfully.${NC}"
+            cat <<EOF > /etc/sysctl.d/99-max-performance.conf
+net.core.netdev_max_backlog = 50000
+net.core.rmem_max = 33554432       # 32MB
+net.core.wmem_max = 33554432       # 32MB
+net.core.rmem_default = 1048576    # 1MB
+net.core.wmem_default = 1048576    # 1MB
+net.core.somaxconn = 8192
+net.ipv4.tcp_max_syn_backlog = 16384
+net.ipv4.ip_local_port_range = 1024 65535
+net.ipv4.tcp_slow_start_after_idle = 0
+net.ipv4.udp_mem = 131072 262144 524288
+net.ipv4.tcp_keepalive_time = 300
+net.ipv4.tcp_keepalive_intvl = 60
+net.ipv4.tcp_keepalive_probes = 5
+net.ipv4.tcp_fin_timeout = 15
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.tcp_tw_recycle = 0
+net.ipv4.tcp_timestamps = 1
+EOF
+
+            sysctl --system
+            ifconfig "$SERVER_INTERFACE" txqueuelen 20000
+
+            echo -e "${GREEN}Paqet client configured successfully.${NC}"
             sleep 3
             continue
             ;;
