@@ -204,7 +204,7 @@ EOF
 
             cat > /etc/systemd/system/paqet.service << EOF
 [Unit]
-Description=Paqet Client Service iran
+Description=Paqet Server Service Kharej
 After=network-online.target
 Wants=network-online.target
 StartLimitIntervalSec=0
