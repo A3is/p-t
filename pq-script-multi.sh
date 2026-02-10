@@ -96,21 +96,57 @@ EOF
     echo "----------------------------------------"
     echo
 
-    # ---------- Path Checks ----------
-    check_path() {
-        local label="$1"
-        local path="$2"
+# ---------- Path Checks ----------
+check_path() {
+    local label="$1"
 
+    if [[ "$label" == "paqet-core" ]]; then
+        FILE_X86="/root/paqet-core/paqet_linux_amd64"
+        FILE_ARM="/root/paqet-core/paqet_linux_arm64"
+        if [[ -f "$FILE_X86" || -f "$FILE_ARM" ]]; then
+            echo -e "$label : ${GREEN}Exists${NC}"
+        else
+            echo -e "$label : ${RED}Not exists${NC}"
+        fi
+
+    elif [[ "$label" == "ConfigFile" ]]; then
+        FILES=$(ls /root/paqet-core/*.yaml 2>/dev/null | xargs -n1 basename | tr '\n' '-' | sed 's/-$//')
+        if [[ -n "$FILES" ]]; then
+            echo -e "$label : ${GREEN}$FILES${NC}"
+        else
+            echo -e "$label : ${RED}Not exists${NC}"
+        fi
+
+    elif [[ "$label" == "PaqetService" ]]; then
+        SERVICES=()
+        for f in /etc/systemd/system/paqet-kharej-*.service /etc/systemd/system/paqet-iran-*.service; do
+            [[ -e "$f" ]] || continue
+            name=$(basename "$f")
+            status=$(systemctl is-active "$name")
+            SERVICES+=("${name} (${status})")
+        done
+
+        if [[ "${#SERVICES[@]}" -gt 0 ]]; then
+            echo -e "$label : ${GREEN}$(IFS=- ; echo "${SERVICES[*]}")${NC}"
+        else
+            echo -e "$label : ${RED}Not exists${NC}"
+        fi
+
+    else
+        # Fallback برای چک معمولی
+        local path="$2"
         if [ -e "$path" ]; then
             echo -e "$label : ${GREEN}Exists${NC}"
         else
             echo -e "$label : ${RED}Not exists${NC}"
         fi
-    }
+    fi
+}
 
-    check_path " paqet-core" "/root/paqet-core"
-    check_path " config.yml" "/root/paqet-core/config.yaml"
-    check_path " paqet.service" "/etc/systemd/system/paqet.service"
+# فراخوانی ها
+check_path "paqet-core"
+check_path "ConfigFile"
+check_path "PaqetService"
 
     echo
     echo "----------------------------------------"
