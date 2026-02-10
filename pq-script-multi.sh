@@ -12,11 +12,14 @@ while true; do
     GREEN='\033[0;32m'
     NC='\033[0m'
 
+
+
     # ---------- Check root ----------
     if [[ $EUID -ne 0 ]]; then
         echo -e "${RED}Please run as root${NC}"
         exit 1
     fi
+
 
     # ---------- Banner ----------
     cat << "EOF"
@@ -69,6 +72,7 @@ EOF
         exit 1
     fi
 
+
     # ---------- Install Prerequisites (First Run) ----------
     REQUIRED_PACKAGES=(iperf3 nload vnstat net-tools)
     MISSING_PACKAGES=()
@@ -86,6 +90,7 @@ EOF
         echo -e "${GREEN}Prerequisites installed successfully.${NC}"
         sleep 2
     fi
+
 
     echo
     echo "----------------------------------------"
@@ -139,7 +144,6 @@ EOF
             continue
             ;;
 
-        # ===== بخش ۲: KharejServer اصلاح شده =====
         2)
             echo
             echo "Configuring Paqet service for KharejServer..."
@@ -155,6 +159,7 @@ EOF
             CONFIG_FILE="/root/paqet-core/config-kharej-${NAME}.yaml"
             SERVICE_FILE="/etc/systemd/system/paqet-kharej-${NAME}.service"
 
+            # بررسی وجود فایل یا سرویس
             if [[ -f "$CONFIG_FILE" || -f "$SERVICE_FILE" ]]; then
                 read -rp "Config or service exists. Replace? [y/N]: " ANS
                 [[ "$ANS" =~ ^[Yy]$ ]] || continue
@@ -169,8 +174,9 @@ EOF
             done
 
             SERVER_INTERFACE=$(ip route | awk '/default/ {print $5; exit}')
-            SERVER_IP=$(ip -4 addr show "$SERVER_INTERFACE" | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
-            ROUTER_MAC=$(arp -n "$(ip route | awk '/default/ {print $3}')" | awk '/ether/ {print $3}')
+            SERVER_IP=$(ip -4 addr show "$SERVER_INTERFACE" | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | head -n1)
+            DEFAULT_GATEWAY_IP=$(ip route show | grep default | awk '{print $3}' | head -n1)
+            ROUTER_MAC=$(arp -n "$DEFAULT_GATEWAY_IP" | awk '/ether/ {print $3}')
 
             mkdir -p /root/paqet-core
             chmod 700 /root/paqet-core
@@ -192,8 +198,20 @@ network:
 transport:
   protocol: "kcp"
   conn: 1
+  kcp:
+    key: "81c994902cd2e0787d2a09cf8921da1c27f4a0656ba606e56b7327c3b9a8f492"
+    block: "aes-128-gcm"
+    mode: "fast2"
+    mtu: 1350
+    sndwnd: 1024
+    rcvwnd: 1024
+    nodelay: 1
+    interval: 20
+    resend: 2
+    nc: 1
+    smuxbuf: 67108864
+    streambuf: 2097152
 EOF
-
             chmod 600 "$CONFIG_FILE"
             chown root:root "$CONFIG_FILE"
 
@@ -222,6 +240,11 @@ WorkingDirectory=/root/paqet-core
 ExecStart=$EXEC_FILE run -c $CONFIG_FILE
 Restart=always
 RestartSec=3
+StartLimitBurst=0
+LimitNOFILE=1048576
+CPUSchedulingPolicy=fifo
+CPUSchedulingPriority=99
+Nice=-20
 
 [Install]
 WantedBy=multi-user.target
@@ -243,7 +266,6 @@ EOF
             continue
             ;;
 
-        # ===== بخش ۳: IranServer اصلاح شده =====
         3)
             echo
             echo "Configuring Paqet client for IranServer..."
@@ -259,26 +281,27 @@ EOF
             CONFIG_FILE="/root/paqet-core/config-iran-${NAME}.yaml"
             SERVICE_FILE="/etc/systemd/system/paqet-iran-${NAME}.service"
 
+            # بررسی وجود فایل یا سرویس
             if [[ -f "$CONFIG_FILE" || -f "$SERVICE_FILE" ]]; then
                 read -rp "Config or service exists. Replace? [y/N]: " ANS
                 [[ "$ANS" =~ ^[Yy]$ ]] || continue
             fi
 
-            # دریافت آدرس سرور Kharej
+            # دریافت آدرس Kharej Server
             while true; do
                 read -rp "Enter Kharej server IP: " KHAREJ_IP
                 [[ "$KHAREJ_IP" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] && break
                 echo "Invalid IP"
             done
 
-            # دریافت پورت Tunnel
+            # دریافت TunnelPort
             while true; do
                 read -rp "Enter Tunnel Port: " TunnelPort
                 [[ "$TunnelPort" =~ ^[0-9]+$ ]] && ((TunnelPort>=1 && TunnelPort<=65535)) || continue
                 break
             done
 
-            # دریافت پورت Socks
+            # دریافت Socks Port
             while true; do
                 read -rp "Enter Socks Port: " IranPortSocks
                 [[ "$IranPortSocks" =~ ^[0-9]+$ ]] && ((IranPortSocks>=1 && IranPortSocks<=65535)) || continue
@@ -287,8 +310,9 @@ EOF
             done
 
             SERVER_INTERFACE=$(ip route | awk '/default/ {print $5; exit}')
-            SERVER_IP=$(ip -4 addr show "$SERVER_INTERFACE" | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
-            ROUTER_MAC=$(arp -n "$(ip route | awk '/default/ {print $3}')" | awk '/ether/ {print $3}')
+            SERVER_IP=$(ip -4 addr show "$SERVER_INTERFACE" | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | head -n1)
+            DEFAULT_GATEWAY_IP=$(ip route show | grep default | awk '{print $3}' | head -n1)
+            ROUTER_MAC=$(arp -n "$DEFAULT_GATEWAY_IP" | awk '/ether/ {print $3}')
 
             mkdir -p /root/paqet-core
             chmod 700 /root/paqet-core
@@ -313,6 +337,19 @@ server:
 transport:
   protocol: "kcp"
   conn: 1
+  kcp:
+    key: "81c994902cd2e0787d2a09cf8921da1c27f4a0656ba606e56b7327c3b9a8f492"
+    block: "aes-128-gcm"
+    mode: "fast2"
+    mtu: 1350
+    sndwnd: 1024
+    rcvwnd: 1024
+    nodelay: 1
+    interval: 20
+    resend: 2
+    nc: 1
+    smuxbuf: 67108864
+    streambuf: 2097152
 EOF
 
             chmod 600 "$CONFIG_FILE"
@@ -343,6 +380,11 @@ WorkingDirectory=/root/paqet-core
 ExecStart=$EXEC_FILE run -c $CONFIG_FILE
 Restart=always
 RestartSec=3
+StartLimitBurst=0
+LimitNOFILE=1048576
+CPUSchedulingPolicy=fifo
+CPUSchedulingPriority=99
+Nice=-20
 
 [Install]
 WantedBy=multi-user.target
