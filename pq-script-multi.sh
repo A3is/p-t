@@ -680,15 +680,8 @@ EOF
         systemctl disable "$SERVICE_NAME"
         rm -f "/etc/systemd/system/$SERVICE_NAME"
 
-        # ===== حذف config مرتبط مثل بخش 6 =====
-        BASE_NAME="${SERVICE_NAME%.service}"   # حذف .service
-        if [[ "$BASE_NAME" == paqet-kharej-* ]]; then
-            SHORT_NAME="${BASE_NAME#paqet-kharej-}"
-            CONFIG_FILE="/root/paqet-core/config-kharej-${SHORT_NAME}.yaml"
-        elif [[ "$BASE_NAME" == paqet-iran-* ]]; then
-            SHORT_NAME="${BASE_NAME#paqet-iran-}"
-            CONFIG_FILE="/root/paqet-core/config-iran-${SHORT_NAME}.yaml"
-        fi
+        # ===== پیدا کردن و حذف config دقیق =====
+        CONFIG_FILE=$(ls /root/paqet-core/config-*.yaml 2>/dev/null | grep "${SERVICE_NAME%.service}")
         [[ -f "$CONFIG_FILE" ]] && rm -f "$CONFIG_FILE"
         # ========================================
 
@@ -701,14 +694,7 @@ EOF
             systemctl disable "$s"
             rm -f "/etc/systemd/system/$s"
 
-            BASE_NAME="${s%.service}"
-            if [[ "$BASE_NAME" == paqet-kharej-* ]]; then
-                SHORT_NAME="${BASE_NAME#paqet-kharej-}"
-                CONFIG_FILE="/root/paqet-core/config-kharej-${SHORT_NAME}.yaml"
-            elif [[ "$BASE_NAME" == paqet-iran-* ]]; then
-                SHORT_NAME="${BASE_NAME#paqet-iran-}"
-                CONFIG_FILE="/root/paqet-core/config-iran-${SHORT_NAME}.yaml"
-            fi
+            CONFIG_FILE=$(ls /root/paqet-core/config-*.yaml 2>/dev/null | grep "${s%.service}")
             [[ -f "$CONFIG_FILE" ]] && rm -f "$CONFIG_FILE"
 
             echo -e "${GREEN}Service and config deleted: $s${NC}"
