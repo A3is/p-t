@@ -609,7 +609,7 @@ EOF
 
     SERVICES=()
     for f in "${FILES[@]}"; do
-        [[ -n "$f" ]] && SERVICES+=("$(basename "$f")")
+        [[ -f "$f" ]] && SERVICES+=("$(basename "$f")")
     done
 
     if [[ "${#SERVICES[@]}" -eq 0 ]]; then
@@ -624,10 +624,13 @@ EOF
 
     read -rp "Select option: " SEL
     if [[ "$SEL" =~ ^[0-9]+$ ]] && (( SEL >=1 && SEL <= ${#SERVICES[@]} )); then
-        # حذف .service از اسم برای پیدا کردن config
         SERVICE_NAME="${SERVICES[$((SEL-1))]}"
+        # حذف پسوند .service
         BASE_NAME="${SERVICE_NAME%.service}"
-        CONFIG_FILE="/root/paqet-core/config-iran-${BASE_NAME#paqet-iran-}.yaml"
+        # فقط قسمت بعد از paqet-iran-
+        SHORT_NAME="${BASE_NAME#paqet-iran-}"
+
+        CONFIG_FILE="/root/paqet-core/config-iran-${SHORT_NAME}.yaml"
 
         if [[ ! -f "$CONFIG_FILE" ]]; then
             echo -e "${RED}Config file not found: $CONFIG_FILE${NC}"
