@@ -680,27 +680,34 @@ EOF
         systemctl disable "$SERVICE_NAME"
         rm -f "/etc/systemd/system/$SERVICE_NAME"
 
-        # حذف فایل config مربوطه
-        if [[ "$SERVICE_NAME" == paqet-kharej-* ]]; then
-            CONFIG_FILE="/root/paqet-core/config-kharej-${SERVICE_NAME#paqet-kharej-%.service}.yaml"
-        elif [[ "$SERVICE_NAME" == paqet-iran-* ]]; then
-            CONFIG_FILE="/root/paqet-core/config-iran-${SERVICE_NAME#paqet-iran-%.service}.yaml"
+        # ===== حذف config مرتبط مثل بخش 6 =====
+        BASE_NAME="${SERVICE_NAME%.service}"   # حذف .service
+        if [[ "$BASE_NAME" == paqet-kharej-* ]]; then
+            SHORT_NAME="${BASE_NAME#paqet-kharej-}"
+            CONFIG_FILE="/root/paqet-core/config-kharej-${SHORT_NAME}.yaml"
+        elif [[ "$BASE_NAME" == paqet-iran-* ]]; then
+            SHORT_NAME="${BASE_NAME#paqet-iran-}"
+            CONFIG_FILE="/root/paqet-core/config-iran-${SHORT_NAME}.yaml"
         fi
-
         [[ -f "$CONFIG_FILE" ]] && rm -f "$CONFIG_FILE"
+        # ========================================
 
         systemctl daemon-reload
         echo -e "${GREEN}Service and config deleted: $SERVICE_NAME${NC}"
+
     elif [[ "$SEL" =~ ^[Aa]$ ]] && [[ "${#SERVICES[@]}" -gt 1 ]]; then
         for s in "${SERVICES[@]}"; do
             systemctl stop "$s"
             systemctl disable "$s"
             rm -f "/etc/systemd/system/$s"
 
-            if [[ "$s" == paqet-kharej-* ]]; then
-                CONFIG_FILE="/root/paqet-core/config-kharej-${s#paqet-kharej-%.service}.yaml"
-            elif [[ "$s" == paqet-iran-* ]]; then
-                CONFIG_FILE="/root/paqet-core/config-iran-${s#paqet-iran-%.service}.yaml"
+            BASE_NAME="${s%.service}"
+            if [[ "$BASE_NAME" == paqet-kharej-* ]]; then
+                SHORT_NAME="${BASE_NAME#paqet-kharej-}"
+                CONFIG_FILE="/root/paqet-core/config-kharej-${SHORT_NAME}.yaml"
+            elif [[ "$BASE_NAME" == paqet-iran-* ]]; then
+                SHORT_NAME="${BASE_NAME#paqet-iran-}"
+                CONFIG_FILE="/root/paqet-core/config-iran-${SHORT_NAME}.yaml"
             fi
             [[ -f "$CONFIG_FILE" ]] && rm -f "$CONFIG_FILE"
 
@@ -713,7 +720,6 @@ EOF
     sleep 2
     continue
     ;;
-
 
 
         0)
