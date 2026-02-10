@@ -6,9 +6,9 @@ bash pq-script.sh
 
 
 cd /root
-curl -L -o pq-script.sh https://raw.githubusercontent.com/A3is/p-t/master/pq-script-multi.sh
+curl -L -o pq-script-multi.sh https://raw.githubusercontent.com/A3is/p-t/master/pq-script-multi.sh
 chmod +x pq-script-multi.sh
-bash pq-script.sh
+bash pq-script-multi.sh
 
 
 
