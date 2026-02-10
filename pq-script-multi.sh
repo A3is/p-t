@@ -111,14 +111,11 @@ check_path() {
 
     elif [[ "$label" == "ConfigFile" ]]; then
         FILES=()
-        # ذخیره فایل‌ها در آرایه بدون خطا
-        shopt -s nullglob
-        yaml_files=(/root/paqet-core/*.yaml)
-        shopt -u nullglob
-
-        for f in "${yaml_files[@]}"; do
+        for f in /root/paqet-core/*.yaml 2>/dev/null; do
+            [[ -f "$f" ]] || continue
             name=$(basename "$f")
-            display_name=${name#config-}  # حذف پیشوند config-
+            # حذف پیشوند config- اگر وجود داشته باشد
+            display_name=${name#config-}
             FILES+=("$display_name")
         done
 
@@ -130,13 +127,11 @@ check_path() {
 
     elif [[ "$label" == "PaqetService" ]]; then
         SERVICES=()
-        shopt -s nullglob
-        service_files=(/etc/systemd/system/paqet-kharej-*.service /etc/systemd/system/paqet-iran-*.service)
-        shopt -u nullglob
-
-        for f in "${service_files[@]}"; do
+        for f in /etc/systemd/system/paqet-kharej-*.service /etc/systemd/system/paqet-iran-*.service; do
+            [[ -e "$f" ]] || continue
             name=$(basename "$f")
-            display_name=${name#paqet-}  # حذف پیشوند paqet-
+            # حذف پیشوند paqet- اگر وجود داشته باشد
+            display_name=${name#paqet-}
             status=$(systemctl is-active "$name" 2>/dev/null || echo "inactive")
             SERVICES+=("${display_name} (${status})")
         done
@@ -148,7 +143,7 @@ check_path() {
         fi
 
     else
-        # حالت fallback برای بررسی مسیرهای معمولی
+        # Fallback برای چک معمولی
         local path="$2"
         if [ -e "$path" ]; then
             echo -e "$label : ${GREEN}Exists${NC}"
@@ -158,10 +153,11 @@ check_path() {
     fi
 }
 
-# فراخوانی‌ها
+# فراخوانی ها
 check_path "paqet-core"
 check_path "ConfigFile"
 check_path "PaqetService"
+
 
 
 
