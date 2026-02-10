@@ -603,26 +603,42 @@ EOF
 
             read -rp "Select option: " SEL
             if [[ "$SEL" =~ ^[0-9]+$ ]]; then
+                delete_service() {
+                    local svc="$1"
+                    local cfg=""
+                    systemctl stop "$svc"
+                    rm -f "/etc/systemd/system/$svc"
+
+                    # تعیین مسیر کانفیگ بر اساس نام سرویس
+                    if [[ "$svc" =~ paqet-kharej-(.+)\.service ]]; then
+                        cfg="/root/paqet-core/config-kharej-${BASH_REMATCH[1]}.yaml"
+                    elif [[ "$svc" =~ paqet-iran-(.+)\.service ]]; then
+                        cfg="/root/paqet-core/config-iran-${BASH_REMATCH[1]}.yaml"
+                    fi
+
+                    [[ -n "$cfg" && -f "$cfg" ]] && rm -f "$cfg"
+                    echo -e "${GREEN}$svc and its config deleted.${NC}"
+                }
+
                 if (( SEL >=1 && SEL <= ${#SERVICES[@]} )); then
-                    systemctl stop "${SERVICES[$((SEL-1))]}"
-                    rm -f "/etc/systemd/system/${SERVICES[$((SEL-1))]}"
-                    echo -e "${GREEN}${SERVICES[$((SEL-1))]} deleted.${NC}"
+                    delete_service "${SERVICES[$((SEL-1))]}"
                 elif (( SEL == ${#SERVICES[@]} + 1 )); then
                     for svc in "${SERVICES[@]}"; do
-                        systemctl stop "$svc"
-                        rm -f "/etc/systemd/system/$svc"
+                        delete_service "$svc"
                     done
-                    echo -e "${GREEN}All Paqet services deleted.${NC}"
+                    echo -e "${GREEN}All Paqet services and their configs deleted.${NC}"
                 else
                     echo -e "${RED}Invalid selection.${NC}"
                 fi
             else
                 echo -e "${RED}Invalid input.${NC}"
             fi
+
             systemctl daemon-reload
             sleep 2
             continue
             ;;
+
 
         0)
             echo -e "${GREEN}Exiting...${NC}"
