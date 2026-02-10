@@ -285,7 +285,7 @@ EOF
             ifconfig "$SERVER_INTERFACE" txqueuelen 20000
             sync; echo 3 > /proc/sys/vm/drop_caches
             systemctl daemon-reload
-            systemctl restart paqet
+            systemctl restart "paqet-kharej-${NAME}"
 
             echo -e "${GREEN}Paqet server configured successfully.${NC}"
             sleep 3
