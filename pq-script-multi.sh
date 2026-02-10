@@ -110,7 +110,7 @@ check_path() {
         fi
 
     elif [[ "$label" == "ConfigFile" ]]; then
-        FILES=$(ls /root/paqet-core/*.yaml 2>/dev/null | xargs -n1 basename | tr '\n' '-' | sed 's/-$//')
+        FILES=$(ls /root/paqet-core/*.yaml 2>/dev/null | xargs -n1 basename | sed 's/^config-//g' | tr '\n' '-' | sed 's/-$//')
         if [[ -n "$FILES" ]]; then
             echo -e "$label : ${GREEN}$FILES${NC}"
         else
@@ -122,8 +122,10 @@ check_path() {
         for f in /etc/systemd/system/paqet-kharej-*.service /etc/systemd/system/paqet-iran-*.service; do
             [[ -e "$f" ]] || continue
             name=$(basename "$f")
+            # حذف پیشوند paqet-
+            display_name=$(echo "$name" | sed 's/^paqet-//')
             status=$(systemctl is-active "$name")
-            SERVICES+=("${name} (${status})")
+            SERVICES+=("${display_name} (${status})")
         done
 
         if [[ "${#SERVICES[@]}" -gt 0 ]]; then
@@ -144,7 +146,7 @@ check_path() {
 }
 
 # فراخوانی ها
-check_path "paqet-core"
+check_path "Paqet-Core"
 check_path "ConfigFile"
 check_path "PaqetService"
 
