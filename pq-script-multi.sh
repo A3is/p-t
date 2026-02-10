@@ -504,12 +504,13 @@ EOF
 
 # ---------- Safe Paqet Operations ----------
 
-# 4. Restart Service
+# ---------- 4) Restart Service ----------
 4)
+    systemctl daemon-reload
     echo
     echo "Select Paqet service to restart:"
     shopt -s nullglob
-    FILES=(/etc/systemd/system/paqet-*.service)
+    FILES=(/etc/systemd/system/paqet-kharej-*.service /etc/systemd/system/paqet-iran-*.service)
     shopt -u nullglob
 
     if [[ "${#FILES[@]}" -eq 0 ]]; then
@@ -520,46 +521,42 @@ EOF
 
     SERVICES=()
     for f in "${FILES[@]}"; do
-        [[ -n "$f" ]] && SERVICES+=("$(basename "$f")")
+        [[ -f "$f" ]] && SERVICES+=("$(basename "$f")")
     done
-
-    if [[ "${#SERVICES[@]}" -eq 0 ]]; then
-        echo -e "${RED}No Paqet services found.${NC}"
-        sleep 2
-        continue
-    fi
 
     for i in "${!SERVICES[@]}"; do
         echo "$((i+1))- ${SERVICES[i]}"
     done
-    [[ "${#SERVICES[@]}" -gt 1 ]] && echo "$(( ${#SERVICES[@]} + 1 ))- Restart All"
+
+    if [[ "${#SERVICES[@]}" -gt 1 ]]; then
+        echo "A- Restart All"
+    fi
+    echo "0- Return to Main Menu"
 
     read -rp "Select option: " SEL
-    if [[ "$SEL" =~ ^[0-9]+$ ]]; then
-        if (( SEL >=1 && SEL <= ${#SERVICES[@]} )); then
-            systemctl restart "${SERVICES[$((SEL-1))]}"
-            echo -e "${GREEN}${SERVICES[$((SEL-1))]} restarted.${NC}"
-        elif (( SEL == ${#SERVICES[@]} + 1 )); then
-            for svc in "${SERVICES[@]}"; do
-                systemctl restart "$svc"
-            done
-            echo -e "${GREEN}All Paqet services restarted.${NC}"
-        else
-            echo -e "${RED}Invalid selection.${NC}"
-        fi
+    if [[ "$SEL" == "0" ]]; then
+        continue
+    elif [[ "$SEL" =~ ^[1-9][0-9]*$ ]] && (( SEL >=1 && SEL <= ${#SERVICES[@]} )); then
+        systemctl restart "${SERVICES[$((SEL-1))]}"
+        echo -e "${GREEN}Service restarted: ${SERVICES[$((SEL-1))]}${NC}"
+    elif [[ "$SEL" =~ ^[Aa]$ ]] && [[ "${#SERVICES[@]}" -gt 1 ]]; then
+        for s in "${SERVICES[@]}"; do
+            systemctl restart "$s"
+            echo -e "${GREEN}Service restarted: $s${NC}"
+        done
     else
-        echo -e "${RED}Invalid input.${NC}"
+        echo -e "${RED}Invalid selection.${NC}"
     fi
     sleep 2
     continue
     ;;
 
-# 5. Service Status
+# ---------- 5) Service Status ----------
 5)
     echo
     echo "Select Paqet service to show status:"
     shopt -s nullglob
-    FILES=(/etc/systemd/system/paqet-*.service)
+    FILES=(/etc/systemd/system/paqet-kharej-*.service /etc/systemd/system/paqet-iran-*.service)
     shopt -u nullglob
 
     if [[ "${#FILES[@]}" -eq 0 ]]; then
@@ -570,22 +567,19 @@ EOF
 
     SERVICES=()
     for f in "${FILES[@]}"; do
-        [[ -n "$f" ]] && SERVICES+=("$(basename "$f")")
+        [[ -f "$f" ]] && SERVICES+=("$(basename "$f")")
     done
-
-    if [[ "${#SERVICES[@]}" -eq 0 ]]; then
-        echo -e "${RED}No Paqet services found.${NC}"
-        sleep 2
-        continue
-    fi
 
     for i in "${!SERVICES[@]}"; do
         echo "$((i+1))- ${SERVICES[i]}"
     done
+    echo "0- Return to Main Menu"
 
     read -rp "Select option: " SEL
-    if [[ "$SEL" =~ ^[0-9]+$ ]] && (( SEL >=1 && SEL <= ${#SERVICES[@]} )); then
-        systemctl status "${SERVICES[$((SEL-1))]}" --no-pager
+    if [[ "$SEL" == "0" ]]; then
+        continue
+    elif [[ "$SEL" =~ ^[1-9][0-9]*$ ]] && (( SEL >=1 && SEL <= ${#SERVICES[@]} )); then
+        systemctl status "${SERVICES[$((SEL-1))]}"
     else
         echo -e "${RED}Invalid selection.${NC}"
     fi
@@ -593,7 +587,7 @@ EOF
     continue
     ;;
 
-# 6. Paqet Test
+# ---------- 6) Paqet Test in Iran ----------
 6)
     echo
     echo "Select Paqet client service to test:"
@@ -612,22 +606,17 @@ EOF
         [[ -f "$f" ]] && SERVICES+=("$(basename "$f")")
     done
 
-    if [[ "${#SERVICES[@]}" -eq 0 ]]; then
-        echo -e "${RED}No Paqet client services found.${NC}"
-        sleep 2
-        continue
-    fi
-
     for i in "${!SERVICES[@]}"; do
         echo "$((i+1))- ${SERVICES[i]}"
     done
+    echo "0- Return to Main Menu"
 
     read -rp "Select option: " SEL
-    if [[ "$SEL" =~ ^[0-9]+$ ]] && (( SEL >=1 && SEL <= ${#SERVICES[@]} )); then
+    if [[ "$SEL" == "0" ]]; then
+        continue
+    elif [[ "$SEL" =~ ^[0-9]+$ ]] && (( SEL >=1 && SEL <= ${#SERVICES[@]} )); then
         SERVICE_NAME="${SERVICES[$((SEL-1))]}"
-        # حذف پسوند .service
         BASE_NAME="${SERVICE_NAME%.service}"
-        # فقط قسمت بعد از paqet-iran-
         SHORT_NAME="${BASE_NAME#paqet-iran-}"
 
         CONFIG_FILE="/root/paqet-core/config-iran-${SHORT_NAME}.yaml"
@@ -654,13 +643,12 @@ EOF
     continue
     ;;
 
-
-# 7. Delete Paqet
+# ---------- 7) Delete Paqet ----------
 7)
     echo
     echo "Select Paqet service to delete:"
     shopt -s nullglob
-    FILES=(/etc/systemd/system/paqet-*.service)
+    FILES=(/etc/systemd/system/paqet-kharej-*.service /etc/systemd/system/paqet-iran-*.service)
     shopt -u nullglob
 
     if [[ "${#FILES[@]}" -eq 0 ]]; then
@@ -671,57 +659,61 @@ EOF
 
     SERVICES=()
     for f in "${FILES[@]}"; do
-        [[ -n "$f" ]] && SERVICES+=("$(basename "$f")")
+        [[ -f "$f" ]] && SERVICES+=("$(basename "$f")")
     done
-
-    if [[ "${#SERVICES[@]}" -eq 0 ]]; then
-        echo -e "${RED}No Paqet services found.${NC}"
-        sleep 2
-        continue
-    fi
 
     for i in "${!SERVICES[@]}"; do
         echo "$((i+1))- ${SERVICES[i]}"
     done
-    [[ "${#SERVICES[@]}" -gt 1 ]] && echo "$(( ${#SERVICES[@]} + 1 ))- Delete All"
+
+    if [[ "${#SERVICES[@]}" -gt 1 ]]; then
+        echo "A- Delete All"
+    fi
+    echo "0- Return to Main Menu"
 
     read -rp "Select option: " SEL
+    if [[ "$SEL" == "0" ]]; then
+        continue
+    elif [[ "$SEL" =~ ^[1-9][0-9]*$ ]] && (( SEL >=1 && SEL <= ${#SERVICES[@]} )); then
+        SERVICE_NAME="${SERVICES[$((SEL-1))]}"
+        systemctl stop "$SERVICE_NAME"
+        systemctl disable "$SERVICE_NAME"
+        rm -f "/etc/systemd/system/$SERVICE_NAME"
 
-    delete_service() {
-        local svc="$1"
-        local cfg=""
-        systemctl stop "$svc" 2>/dev/null
-        rm -f "/etc/systemd/system/$svc"
-
-        if [[ "$svc" =~ paqet-kharej-(.+)\.service ]]; then
-            cfg="/root/paqet-core/config-kharej-${BASH_REMATCH[1]}.yaml"
-        elif [[ "$svc" =~ paqet-iran-(.+)\.service ]]; then
-            cfg="/root/paqet-core/config-iran-${BASH_REMATCH[1]}.yaml"
+        # حذف فایل config مربوطه
+        if [[ "$SERVICE_NAME" == paqet-kharej-* ]]; then
+            CONFIG_FILE="/root/paqet-core/config-kharej-${SERVICE_NAME#paqet-kharej-%.service}.yaml"
+        elif [[ "$SERVICE_NAME" == paqet-iran-* ]]; then
+            CONFIG_FILE="/root/paqet-core/config-iran-${SERVICE_NAME#paqet-iran-%.service}.yaml"
         fi
 
-        [[ -n "$cfg" && -f "$cfg" ]] && rm -f "$cfg"
-        echo -e "${GREEN}$svc and its config deleted.${NC}"
-    }
+        [[ -f "$CONFIG_FILE" ]] && rm -f "$CONFIG_FILE"
 
-    if [[ "$SEL" =~ ^[0-9]+$ ]]; then
-        if (( SEL >=1 && SEL <= ${#SERVICES[@]} )); then
-            delete_service "${SERVICES[$((SEL-1))]}"
-        elif (( SEL == ${#SERVICES[@]} + 1 )); then
-            for svc in "${SERVICES[@]}"; do
-                delete_service "$svc"
-            done
-            echo -e "${GREEN}All Paqet services and their configs deleted.${NC}"
-        else
-            echo -e "${RED}Invalid selection.${NC}"
-        fi
+        systemctl daemon-reload
+        echo -e "${GREEN}Service and config deleted: $SERVICE_NAME${NC}"
+    elif [[ "$SEL" =~ ^[Aa]$ ]] && [[ "${#SERVICES[@]}" -gt 1 ]]; then
+        for s in "${SERVICES[@]}"; do
+            systemctl stop "$s"
+            systemctl disable "$s"
+            rm -f "/etc/systemd/system/$s"
+
+            if [[ "$s" == paqet-kharej-* ]]; then
+                CONFIG_FILE="/root/paqet-core/config-kharej-${s#paqet-kharej-%.service}.yaml"
+            elif [[ "$s" == paqet-iran-* ]]; then
+                CONFIG_FILE="/root/paqet-core/config-iran-${s#paqet-iran-%.service}.yaml"
+            fi
+            [[ -f "$CONFIG_FILE" ]] && rm -f "$CONFIG_FILE"
+
+            echo -e "${GREEN}Service and config deleted: $s${NC}"
+        done
+        systemctl daemon-reload
     else
-        echo -e "${RED}Invalid input.${NC}"
+        echo -e "${RED}Invalid selection.${NC}"
     fi
-
-    systemctl daemon-reload
     sleep 2
     continue
     ;;
+
 
 
         0)
