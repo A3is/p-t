@@ -644,6 +644,7 @@ EOF
     ;;
 
 # ---------- 7) Delete Paqet ----------
+# ---------- 7) Delete Paqet ----------
 7)
     echo
     echo "Select Paqet service to delete:"
@@ -676,16 +677,27 @@ EOF
         continue
     elif [[ "$SEL" =~ ^[1-9][0-9]*$ ]] && (( SEL >=1 && SEL <= ${#SERVICES[@]} )); then
         SERVICE_NAME="${SERVICES[$((SEL-1))]}"
+
+        # ===== حذف سرویس =====
         systemctl stop "$SERVICE_NAME"
         systemctl disable "$SERVICE_NAME"
         rm -f "/etc/systemd/system/$SERVICE_NAME"
+        systemctl daemon-reload
 
-        # ===== پیدا کردن و حذف config دقیق =====
-        CONFIG_FILE=$(ls /root/paqet-core/config-*.yaml 2>/dev/null | grep "${SERVICE_NAME%.service}")
+        # ===== حذف config مرتبط =====
+        BASE_NAME="${SERVICE_NAME%.service}"   # حذف .service
+        if [[ "$BASE_NAME" == paqet-kharej-* ]]; then
+            SHORT_NAME="${BASE_NAME#paqet-kharej-}"
+            CONFIG_FILE="/root/paqet-core/config-kharej-${SHORT_NAME}.yaml"
+        elif [[ "$BASE_NAME" == paqet-iran-* ]]; then
+            SHORT_NAME="${BASE_NAME#paqet-iran-}"
+            CONFIG_FILE="/root/paqet-core/config-iran-${SHORT_NAME}.yaml"
+        fi
+
+        echo "DEBUG: Config to delete -> $CONFIG_FILE"
         [[ -f "$CONFIG_FILE" ]] && rm -f "$CONFIG_FILE"
         # ========================================
 
-        systemctl daemon-reload
         echo -e "${GREEN}Service and config deleted: $SERVICE_NAME${NC}"
 
     elif [[ "$SEL" =~ ^[Aa]$ ]] && [[ "${#SERVICES[@]}" -gt 1 ]]; then
@@ -694,7 +706,16 @@ EOF
             systemctl disable "$s"
             rm -f "/etc/systemd/system/$s"
 
-            CONFIG_FILE=$(ls /root/paqet-core/config-*.yaml 2>/dev/null | grep "${s%.service}")
+            BASE_NAME="${s%.service}"
+            if [[ "$BASE_NAME" == paqet-kharej-* ]]; then
+                SHORT_NAME="${BASE_NAME#paqet-kharej-}"
+                CONFIG_FILE="/root/paqet-core/config-kharej-${SHORT_NAME}.yaml"
+            elif [[ "$BASE_NAME" == paqet-iran-* ]]; then
+                SHORT_NAME="${BASE_NAME#paqet-iran-}"
+                CONFIG_FILE="/root/paqet-core/config-iran-${SHORT_NAME}.yaml"
+            fi
+
+            echo "DEBUG: Config to delete -> $CONFIG_FILE"
             [[ -f "$CONFIG_FILE" ]] && rm -f "$CONFIG_FILE"
 
             echo -e "${GREEN}Service and config deleted: $s${NC}"
