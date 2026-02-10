@@ -111,7 +111,8 @@ check_path() {
 
     elif [[ "$label" == "ConfigFile" ]]; then
         FILES=()
-        shopt -s nullglob  # اگر فایل نباشد خطا نده
+        # ذخیره فایل‌ها در آرایه بدون خطا
+        shopt -s nullglob
         yaml_files=(/root/paqet-core/*.yaml)
         shopt -u nullglob
 
@@ -134,10 +135,9 @@ check_path() {
         shopt -u nullglob
 
         for f in "${service_files[@]}"; do
-            [[ -e "$f" ]] || continue
             name=$(basename "$f")
             display_name=${name#paqet-}  # حذف پیشوند paqet-
-            status=$(systemctl is-active "$name")
+            status=$(systemctl is-active "$name" 2>/dev/null || echo "inactive")
             SERVICES+=("${display_name} (${status})")
         done
 
@@ -162,6 +162,7 @@ check_path() {
 check_path "paqet-core"
 check_path "ConfigFile"
 check_path "PaqetService"
+
 
 
 
