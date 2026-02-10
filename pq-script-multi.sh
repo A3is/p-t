@@ -111,11 +111,13 @@ check_path() {
 
     elif [[ "$label" == "ConfigFile" ]]; then
         FILES=()
-        for f in /root/paqet-core/*.yaml 2>/dev/null; do
-            [[ -f "$f" ]] || continue
+        shopt -s nullglob  # اگر فایل نباشد خطا نده
+        yaml_files=(/root/paqet-core/*.yaml)
+        shopt -u nullglob
+
+        for f in "${yaml_files[@]}"; do
             name=$(basename "$f")
-            # حذف فقط پیشوند "config-" اگر بود
-            display_name=${name#config-}
+            display_name=${name#config-}  # حذف پیشوند config-
             FILES+=("$display_name")
         done
 
@@ -127,11 +129,14 @@ check_path() {
 
     elif [[ "$label" == "PaqetService" ]]; then
         SERVICES=()
-        for f in /etc/systemd/system/paqet-kharej-*.service /etc/systemd/system/paqet-iran-*.service; do
+        shopt -s nullglob
+        service_files=(/etc/systemd/system/paqet-kharej-*.service /etc/systemd/system/paqet-iran-*.service)
+        shopt -u nullglob
+
+        for f in "${service_files[@]}"; do
             [[ -e "$f" ]] || continue
             name=$(basename "$f")
-            # حذف فقط پیشوند "paqet-"
-            display_name=${name#paqet-}
+            display_name=${name#paqet-}  # حذف پیشوند paqet-
             status=$(systemctl is-active "$name")
             SERVICES+=("${display_name} (${status})")
         done
@@ -143,7 +148,7 @@ check_path() {
         fi
 
     else
-        # Fallback برای چک معمولی
+        # حالت fallback برای بررسی مسیرهای معمولی
         local path="$2"
         if [ -e "$path" ]; then
             echo -e "$label : ${GREEN}Exists${NC}"
@@ -153,10 +158,11 @@ check_path() {
     fi
 }
 
-# فراخوانی ها
-check_path "Paqet-Core"
+# فراخوانی‌ها
+check_path "paqet-core"
 check_path "ConfigFile"
 check_path "PaqetService"
+
 
 
     echo
