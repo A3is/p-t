@@ -624,18 +624,24 @@ EOF
 
     read -rp "Select option: " SEL
     if [[ "$SEL" =~ ^[0-9]+$ ]] && (( SEL >=1 && SEL <= ${#SERVICES[@]} )); then
-        CONFIG_FILE="/root/paqet-core/config-iran-${SERVICES[$((SEL-1))]#paqet-iran-}.yaml"
+        # حذف .service از اسم برای پیدا کردن config
+        SERVICE_NAME="${SERVICES[$((SEL-1))]}"
+        BASE_NAME="${SERVICE_NAME%.service}"
+        CONFIG_FILE="/root/paqet-core/config-iran-${BASE_NAME#paqet-iran-}.yaml"
+
         if [[ ! -f "$CONFIG_FILE" ]]; then
             echo -e "${RED}Config file not found: $CONFIG_FILE${NC}"
             sleep 2
             continue
         fi
+
         PORT=$(grep -Po '(?<=listen: ")[^:]+:\K[0-9]+' "$CONFIG_FILE")
         if [[ -z "$PORT" ]]; then
             echo -e "${RED}Cannot extract port from config.${NC}"
             sleep 2
             continue
         fi
+
         echo -e "${GREEN}Testing service on port $PORT...${NC}"
         curl -v https://google.com --proxy "socks5h://127.0.0.1:${PORT}"
     else
@@ -644,6 +650,7 @@ EOF
     read -rp "Press enter to return to menu..."
     continue
     ;;
+
 
 # 7. Delete Paqet
 7)
