@@ -684,8 +684,8 @@ EOF
         rm -f "/etc/systemd/system/$SERVICE_NAME"
         systemctl daemon-reload
 
-        # ===== حذف config مرتبط =====
-        BASE_NAME="${SERVICE_NAME%.service}"   # حذف .service
+        # ===== حذف config مرتبط و نمایش مسیر =====
+        BASE_NAME="${SERVICE_NAME%.service}"
         if [[ "$BASE_NAME" == paqet-kharej-* ]]; then
             SHORT_NAME="${BASE_NAME#paqet-kharej-}"
             CONFIG_FILE="/root/paqet-core/config-kharej-${SHORT_NAME}.yaml"
@@ -694,8 +694,13 @@ EOF
             CONFIG_FILE="/root/paqet-core/config-iran-${SHORT_NAME}.yaml"
         fi
 
-        echo "DEBUG: Config to delete -> $CONFIG_FILE"
-        [[ -f "$CONFIG_FILE" ]] && rm -f "$CONFIG_FILE"
+        # نمایش مسیر فایل قبل از حذف
+        if [[ -f "$CONFIG_FILE" ]]; then
+            echo -e "${GREEN}Deleting config file: $CONFIG_FILE${NC}"
+            rm -f "$CONFIG_FILE"
+        else
+            echo -e "${RED}Config file not found: $CONFIG_FILE${NC}"
+        fi
         # ========================================
 
         echo -e "${GREEN}Service and config deleted: $SERVICE_NAME${NC}"
@@ -715,8 +720,13 @@ EOF
                 CONFIG_FILE="/root/paqet-core/config-iran-${SHORT_NAME}.yaml"
             fi
 
-            echo "DEBUG: Config to delete -> $CONFIG_FILE"
-            [[ -f "$CONFIG_FILE" ]] && rm -f "$CONFIG_FILE"
+            # نمایش مسیر فایل قبل از حذف
+            if [[ -f "$CONFIG_FILE" ]]; then
+                echo -e "${GREEN}Deleting config file: $CONFIG_FILE${NC}"
+                rm -f "$CONFIG_FILE"
+            else
+                echo -e "${RED}Config file not found: $CONFIG_FILE${NC}"
+            fi
 
             echo -e "${GREEN}Service and config deleted: $s${NC}"
         done
@@ -727,7 +737,6 @@ EOF
     sleep 2
     continue
     ;;
-
 
         0)
             echo -e "${GREEN}Exiting...${NC}"
