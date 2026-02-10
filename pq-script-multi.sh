@@ -104,6 +104,8 @@ EOF
     }
 
     check_path " paqet-core" "/root/paqet-core"
+    check_path " config.yml" "/root/paqet-core/config.yaml"
+    check_path " paqet.service" "/etc/systemd/system/paqet.service"
 
     echo
     echo "----------------------------------------"
@@ -137,19 +139,17 @@ EOF
             continue
             ;;
 
-        # =========================
-        # Kharej Server Config
-        # =========================
+        # ===== بخش ۲: KharejServer اصلاح شده =====
         2)
             echo
             echo "Configuring Paqet service for KharejServer..."
             echo
 
-            # ---------- Get name ----------
+            # دریافت نام سرور
             while true; do
                 read -rp "Enter server name (English only): " NAME
                 [[ "$NAME" =~ ^[a-zA-Z0-9_-]+$ ]] && break
-                echo -e "${RED}Invalid name.${NC}"
+                echo -e "${RED}Invalid name. Only English letters, numbers, '-' or '_' allowed.${NC}"
             done
 
             CONFIG_FILE="/root/paqet-core/config-kharej-${NAME}.yaml"
@@ -160,13 +160,11 @@ EOF
                 [[ "$ANS" =~ ^[Yy]$ ]] || continue
             fi
 
-            # ---------- Tunnel Port ----------
+            # دریافت پورت Tunnel
             while true; do
-                read -rp "Enter Tunnel Port: " TUNNEL_PORT
-                [[ "$TUNNEL_PORT" =~ ^[0-9]+$ ]] && ((TUNNEL_PORT>=1 && TUNNEL_PORT<=65535)) || {
-                    echo -e "${RED}Invalid port.${NC}"; continue; }
-                ss -lntup | grep -q ":$TUNNEL_PORT " && {
-                    echo -e "${RED}Port already in use.${NC}"; continue; }
+                read -rp "Enter Tunnel Port: " TunnelPort
+                [[ "$TunnelPort" =~ ^[0-9]+$ ]] && ((TunnelPort>=1 && TunnelPort<=65535)) || { echo "Invalid port"; continue; }
+                ss -lntup | grep -q ":$TunnelPort " && { echo "Port in use"; continue; }
                 break
             done
 
@@ -183,29 +181,32 @@ role: "server"
 log:
   level: "error"
 listen:
-  addr: "0.0.0.0:${TUNNEL_PORT}"
+  addr: "0.0.0.0:${TunnelPort}"
 network:
   interface: "$SERVER_INTERFACE"
   ipv4:
-    addr: "$SERVER_IP:${TUNNEL_PORT}"
+    addr: "$SERVER_IP:${TunnelPort}"
     router_mac: "$ROUTER_MAC"
   tcp:
     local_flag: ["PA"]
 transport:
   protocol: "kcp"
   conn: 1
-  kcp:
-    key: "81c994902cd2e0787d2a09cf8921da1c27f4a0656ba606e56b7327c3b9a8f492"
-    block: "aes-128-gcm"
-    mode: "fast2"
-    mtu: 1350
-    sndwnd: 1024
-    rcvwnd: 1024
 EOF
+
             chmod 600 "$CONFIG_FILE"
             chown root:root "$CONFIG_FILE"
 
-            EXEC_FILE="/root/paqet-core/paqet_linux_amd64"
+            ARCH=$(uname -m)
+            if [[ "$ARCH" == "x86_64" ]]; then
+                EXEC_FILE="/root/paqet-core/paqet_linux_amd64"
+            elif [[ "$ARCH" == "aarch64" ]]; then
+                EXEC_FILE="/root/paqet-core/paqet_linux_arm64"
+            else
+                echo -e "${RED}Unsupported architecture: $ARCH${NC}"
+                read -rp "Press enter to return to menu..."
+                continue
+            fi
 
             cat > "$SERVICE_FILE" << EOF
 [Unit]
@@ -225,6 +226,7 @@ RestartSec=3
 [Install]
 WantedBy=multi-user.target
 EOF
+
             chmod 644 "$SERVICE_FILE"
             chown root:root "$SERVICE_FILE"
 
@@ -232,26 +234,26 @@ EOF
             systemctl enable "paqet-kharej-${NAME}"
             systemctl start "paqet-kharej-${NAME}"
 
-            iptables -t raw -A PREROUTING -p tcp --dport "$TUNNEL_PORT" -j NOTRACK
-            iptables -t raw -A OUTPUT -p tcp --sport "$TUNNEL_PORT" -j NOTRACK
+            iptables -t raw -A PREROUTING -p tcp --dport "$TunnelPort" -j NOTRACK
+            iptables -t raw -A OUTPUT -p tcp --sport "$TunnelPort" -j NOTRACK
+            iptables -t mangle -A OUTPUT -p tcp --sport "$TunnelPort" --tcp-flags RST RST -j DROP
 
-            echo -e "${GREEN}Kharej server ${NAME} ready on port ${TUNNEL_PORT}.${NC}"
+            echo -e "${GREEN}Paqet Kharej server configured successfully.${NC}"
+            sleep 3
             continue
             ;;
 
-        # =========================
-        # Iran Client Config
-        # =========================
+        # ===== بخش ۳: IranServer اصلاح شده =====
         3)
             echo
             echo "Configuring Paqet client for IranServer..."
             echo
 
-            # ---------- Name ----------
+            # دریافت نام
             while true; do
-                read -rp "Enter server name (English only): " NAME
+                read -rp "Enter client name (English only): " NAME
                 [[ "$NAME" =~ ^[a-zA-Z0-9_-]+$ ]] && break
-                echo -e "${RED}Invalid name.${NC}"
+                echo "Invalid name"
             done
 
             CONFIG_FILE="/root/paqet-core/config-iran-${NAME}.yaml"
@@ -262,26 +264,25 @@ EOF
                 [[ "$ANS" =~ ^[Yy]$ ]] || continue
             fi
 
-            # ---------- Kharej IP ----------
+            # دریافت آدرس سرور Kharej
             while true; do
-                read -rp "Enter Kharej server IP: " KHAREJ_SERVER_IP
-                [[ "$KHAREJ_SERVER_IP" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] && break
-                echo -e "${RED}Invalid IP.${NC}"
+                read -rp "Enter Kharej server IP: " KHAREJ_IP
+                [[ "$KHAREJ_IP" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] && break
+                echo "Invalid IP"
             done
 
-            # ---------- Tunnel Port ----------
+            # دریافت پورت Tunnel
             while true; do
-                read -rp "Enter Tunnel Port: " TUNNEL_PORT
-                [[ "$TUNNEL_PORT" =~ ^[0-9]+$ ]] && ((TUNNEL_PORT>=1 && TUNNEL_PORT<=65535)) || continue
+                read -rp "Enter Tunnel Port: " TunnelPort
+                [[ "$TunnelPort" =~ ^[0-9]+$ ]] && ((TunnelPort>=1 && TunnelPort<=65535)) || continue
                 break
             done
 
-            # ---------- Socks Port ----------
+            # دریافت پورت Socks
             while true; do
-                read -rp "Enter Iran Socks Port: " IRAN_PORT_SOCKS
-                [[ "$IRAN_PORT_SOCKS" =~ ^[0-9]+$ ]] && ((IRAN_PORT_SOCKS>=1 && IRAN_PORT_SOCKS<=65535)) || continue
-                ss -lntup | grep -q ":$IRAN_PORT_SOCKS " && {
-                    echo -e "${RED}Port already in use.${NC}"; continue; }
+                read -rp "Enter Socks Port: " IranPortSocks
+                [[ "$IranPortSocks" =~ ^[0-9]+$ ]] && ((IranPortSocks>=1 && IranPortSocks<=65535)) || continue
+                ss -lntup | grep -q ":$IranPortSocks " && { echo "Port in use"; continue; }
                 break
             done
 
@@ -298,22 +299,35 @@ role: "client"
 log:
   level: "error"
 socks5:
-  - listen: "127.0.0.1:${IRAN_PORT_SOCKS}"
+  - listen: "127.0.0.1:${IranPortSocks}"
 network:
   interface: "$SERVER_INTERFACE"
   ipv4:
     addr: "$SERVER_IP:0"
     router_mac: "$ROUTER_MAC"
+  tcp:
+    local_flag: ["PA"]
+    remote_flag: ["PA"]
 server:
-  addr: "$KHAREJ_SERVER_IP:${TUNNEL_PORT}"
+  addr: "$KHAREJ_IP:${TunnelPort}"
 transport:
   protocol: "kcp"
+  conn: 1
 EOF
 
             chmod 600 "$CONFIG_FILE"
             chown root:root "$CONFIG_FILE"
 
-            EXEC_FILE="/root/paqet-core/paqet_linux_amd64"
+            ARCH=$(uname -m)
+            if [[ "$ARCH" == "x86_64" ]]; then
+                EXEC_FILE="/root/paqet-core/paqet_linux_amd64"
+            elif [[ "$ARCH" == "aarch64" ]]; then
+                EXEC_FILE="/root/paqet-core/paqet_linux_arm64"
+            else
+                echo -e "${RED}Unsupported architecture: $ARCH${NC}"
+                read -rp "Press enter to return to menu..."
+                continue
+            fi
 
             cat > "$SERVICE_FILE" << EOF
 [Unit]
@@ -341,7 +355,8 @@ EOF
             systemctl enable "paqet-iran-${NAME}"
             systemctl start "paqet-iran-${NAME}"
 
-            echo -e "${GREEN}Iran client ${NAME} ready. Socks on ${IRAN_PORT_SOCKS}, Tunnel on ${TUNNEL_PORT}.${NC}"
+            echo -e "${GREEN}Paqet Iran client configured successfully.${NC}"
+            sleep 3
             continue
             ;;
 
