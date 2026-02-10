@@ -111,24 +111,31 @@ check_path() {
         fi
 
     elif [[ "$label" == "ConfigFile" ]]; then
-        FILES=$(ls /root/paqet-core/*.yaml 2>/dev/null || true | xargs -n1 basename | tr '\n' '-' | sed 's/-$//')
-        if [[ -n "$FILES" ]]; then
-            echo -e "$label : ${GREEN}$FILES${NC}"
+        # از glob امن استفاده می‌کنیم
+        shopt -s nullglob
+        FILES=(/root/paqet-core/*.yaml)
+        shopt -u nullglob
+
+        if [[ "${#FILES[@]}" -gt 0 ]]; then
+            BASENAMES=()
+            for f in "${FILES[@]}"; do
+                BASENAMES+=("$(basename "$f")")
+            done
+            echo -e "$label : ${GREEN}$(IFS=- ; echo "${BASENAMES[*]}")${NC}"
         else
             echo -e "$label : ${RED}Not exists${NC}"
         fi
 
     elif [[ "$label" == "PaqetService" ]]; then
         SERVICES=()
-        for pattern in /etc/systemd/system/paqet-kharej-*.service /etc/systemd/system/paqet-iran-*.service; do
-            # استفاده از glob با nullglob برای خالی بودن بدون خطا
-            shopt -s nullglob
-            for f in $pattern; do
-                name=$(basename "$f")
-                status=$(systemctl is-active "$name")
-                SERVICES+=("${name} (${status})")
-            done
-            shopt -u nullglob
+        shopt -s nullglob
+        FILES=(/etc/systemd/system/paqet-kharej-*.service /etc/systemd/system/paqet-iran-*.service)
+        shopt -u nullglob
+
+        for f in "${FILES[@]}"; do
+            name=$(basename "$f")
+            status=$(systemctl is-active "$name")
+            SERVICES+=("${name} (${status})")
         done
 
         if [[ "${#SERVICES[@]}" -gt 0 ]]; then
@@ -152,6 +159,7 @@ check_path() {
 check_path "paqet-core"
 check_path "ConfigFile"
 check_path "PaqetService"
+
 
 
 
