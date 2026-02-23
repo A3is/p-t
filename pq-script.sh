@@ -173,20 +173,25 @@ network:
     local_flag: ["PA"]
 transport:
   protocol: "kcp"
-  conn: 1
+  conn: 2
+  tcpbuf: 8192   # TCP buffer size in bytes
+  udpbuf: 4096   # UDP buffer size in bytes
   kcp:
     key: "81c994902cd2e0787d2a09cf8921da1c27f4a0656ba606e56b7327c3b9a8f492"
     block: "aes-128-gcm"
-    mode: "fast2"
+    mode: "manual"
     mtu: 1350
-    sndwnd: 1024
-    rcvwnd: 1024
+    sndwnd: 512
+    rcvwnd: 512
     nodelay: 1
     interval: 20
-    resend: 2
+    resend: 1
     nc: 1
-    smuxbuf: 67108864
-    streambuf: 2097152
+      nocongestion: 1
+      wdelay: true
+      acknodelay: false
+    smuxbuf: 8388608        # 8MB
+    streambuf: 1048576      # 1MB
 EOF
             chmod 600 /root/paqet-core/config.yaml
             chown root:root /root/paqet-core/config.yaml
@@ -207,7 +212,7 @@ EOF
 Description=Paqet Server Service Kharej
 After=network-online.target
 Wants=network-online.target
-StartLimitIntervalSec=0
+#StartLimitIntervalSec=0
 
 [Service]
 Type=simple
@@ -218,9 +223,9 @@ Restart=always
 RestartSec=3
 StartLimitBurst=0
 LimitNOFILE=1048576
-CPUSchedulingPolicy=fifo
-CPUSchedulingPriority=99
-Nice=-20
+#CPUSchedulingPolicy=fifo
+#CPUSchedulingPriority=99
+Nice=-5
 
 [Install]
 WantedBy=multi-user.target
@@ -237,23 +242,27 @@ EOF
             sudo iptables -t mangle -A OUTPUT -p tcp --sport 888 --tcp-flags RST RST -j DROP
 
             cat <<EOF > /etc/sysctl.d/99-max-performance.conf
-net.core.netdev_max_backlog = 50000
-net.core.rmem_max = 33554432       # 32MB
-net.core.wmem_max = 33554432       # 32MB
-net.core.rmem_default = 1048576    # 1MB
-net.core.wmem_default = 1048576    # 1MB
-net.core.somaxconn = 8192
-net.ipv4.tcp_max_syn_backlog = 16384
+# Network backlog
+net.core.netdev_max_backlog = 20000       
+net.core.somaxconn = 4096               
+# Socket buffer
+net.core.rmem_max = 16777216               # 16MB max receive buffer
+net.core.wmem_max = 16777216               # 16MB max send buffer
+net.core.rmem_default = 524288             # 512KB default receive
+net.core.wmem_default = 524288             # 512KB default send
+# TCP settings
+net.ipv4.tcp_max_syn_backlog = 8192  
 net.ipv4.ip_local_port_range = 1024 65535
 net.ipv4.tcp_slow_start_after_idle = 0
-net.ipv4.udp_mem = 131072 262144 524288
 net.ipv4.tcp_keepalive_time = 300
 net.ipv4.tcp_keepalive_intvl = 60
 net.ipv4.tcp_keepalive_probes = 5
-net.ipv4.tcp_fin_timeout = 15
+net.ipv4.tcp_fin_timeout = 20   
 net.ipv4.tcp_tw_reuse = 1
 net.ipv4.tcp_tw_recycle = 0
 net.ipv4.tcp_timestamps = 1
+# UDP memory for KCP
+net.ipv4.udp_mem = 65536 131072 262144
 EOF
 
             sysctl --system
@@ -301,20 +310,25 @@ server:
   addr: "$KHAREJ_SERVER_IP:888"
 transport:
   protocol: "kcp"
-  conn: 1
+  conn: 2
+  tcpbuf: 8192   # TCP buffer size in bytes
+  udpbuf: 4096   # UDP buffer size in bytes
   kcp:
     key: "81c994902cd2e0787d2a09cf8921da1c27f4a0656ba606e56b7327c3b9a8f492"
     block: "aes-128-gcm"
-    mode: "fast2"
+    mode: "manual"
     mtu: 1350
-    sndwnd: 1024
-    rcvwnd: 1024
+    sndwnd: 512
+    rcvwnd: 512
     nodelay: 1
     interval: 20
-    resend: 2
+    resend: 1
     nc: 1
-    smuxbuf: 67108864
-    streambuf: 2097152
+      nocongestion: 1
+      wdelay: true
+      acknodelay: false
+    smuxbuf: 8388608        # 8MB
+    streambuf: 1048576      # 1MB
 EOF
             chmod 600 /root/paqet-core/config.yaml
             chown root:root /root/paqet-core/config.yaml
@@ -335,7 +349,7 @@ EOF
 Description=Paqet Client Service iran
 After=network-online.target
 Wants=network-online.target
-StartLimitIntervalSec=0
+#StartLimitIntervalSec=0
 
 [Service]
 Type=simple
@@ -346,9 +360,9 @@ Restart=always
 RestartSec=3
 StartLimitBurst=0
 LimitNOFILE=1048576
-CPUSchedulingPolicy=fifo
-CPUSchedulingPriority=99
-Nice=-20
+#CPUSchedulingPolicy=fifo
+#CPUSchedulingPriority=99
+Nice=-5
 
 [Install]
 WantedBy=multi-user.target
@@ -361,23 +375,27 @@ EOF
             systemctl start paqet
 
             cat <<EOF > /etc/sysctl.d/99-max-performance.conf
-net.core.netdev_max_backlog = 50000
-net.core.rmem_max = 33554432       # 32MB
-net.core.wmem_max = 33554432       # 32MB
-net.core.rmem_default = 1048576    # 1MB
-net.core.wmem_default = 1048576    # 1MB
-net.core.somaxconn = 8192
-net.ipv4.tcp_max_syn_backlog = 16384
+# Network backlog
+net.core.netdev_max_backlog = 20000       
+net.core.somaxconn = 4096               
+# Socket buffer
+net.core.rmem_max = 16777216               # 16MB max receive buffer
+net.core.wmem_max = 16777216               # 16MB max send buffer
+net.core.rmem_default = 524288             # 512KB default receive
+net.core.wmem_default = 524288             # 512KB default send
+# TCP settings
+net.ipv4.tcp_max_syn_backlog = 8192  
 net.ipv4.ip_local_port_range = 1024 65535
 net.ipv4.tcp_slow_start_after_idle = 0
-net.ipv4.udp_mem = 131072 262144 524288
 net.ipv4.tcp_keepalive_time = 300
 net.ipv4.tcp_keepalive_intvl = 60
 net.ipv4.tcp_keepalive_probes = 5
-net.ipv4.tcp_fin_timeout = 15
+net.ipv4.tcp_fin_timeout = 20   
 net.ipv4.tcp_tw_reuse = 1
 net.ipv4.tcp_tw_recycle = 0
 net.ipv4.tcp_timestamps = 1
+# UDP memory for KCP
+net.ipv4.udp_mem = 65536 131072 262144
 EOF
 
             sysctl --system
