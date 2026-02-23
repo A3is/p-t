@@ -413,6 +413,9 @@ EOF
             sysctl --system
             ifconfig "$SERVER_INTERFACE" txqueuelen 20000
 
+            systemctl daemon-reload
+            systemctl restart paqet
+
             echo -e "${GREEN}Paqet client configured successfully.${NC}"
             sleep 3
             continue
