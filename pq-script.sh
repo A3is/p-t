@@ -187,9 +187,9 @@ transport:
     interval: 20
     resend: 1
     nc: 1
-      nocongestion: 1
-      wdelay: true
-      acknodelay: false
+    nocongestion: 1
+    wdelay: true
+    acknodelay: false
     smuxbuf: 8388608        # 8MB
     streambuf: 1048576      # 1MB
 EOF
@@ -324,9 +324,9 @@ transport:
     interval: 20
     resend: 1
     nc: 1
-      nocongestion: 1
-      wdelay: true
-      acknodelay: false
+    nocongestion: 1
+    wdelay: true
+    acknodelay: false
     smuxbuf: 8388608        # 8MB
     streambuf: 1048576      # 1MB
 EOF
