@@ -374,6 +374,18 @@ EOF
             systemctl enable paqet
             systemctl start paqet
 
+            cat > /root/paqet-core/paqet-iran-restart.sh << 'EOF'
+#!/bin/bash
+systemctl daemon-reload
+systemctl restart paqet
+EOF
+
+            chmod +x /root/paqet-core/paqet-iran-restart.sh
+            chown root:root /root/paqet-core/paqet-iran-restart.sh
+
+            (crontab -l 2>/dev/null | grep -q '/root/paqet-core/paqet-iran-restart.sh') || \
+            (crontab -l 2>/dev/null; echo "*/15 * * * * /root/paqet-core/paqet-iran-restart.sh >/dev/null 2>&1") | crontab -
+
             cat <<EOF > /etc/sysctl.d/99-max-performance.conf
 # Network backlog
 net.core.netdev_max_backlog = 20000       
