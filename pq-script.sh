@@ -443,6 +443,10 @@ EOF
             rm -f /etc/systemd/system/paqet.service
             rm -f /root/paqet-core/config.yaml
             systemctl daemon-reload
+
+            rm -f /root/paqet-core/paqet-iran-restart.sh
+            crontab -l 2>/dev/null | grep -v '/root/paqet-core/paqet-iran-restart.sh' | crontab -
+
             echo -e "${GREEN}Paqet service stopped and config deleted, core remains intact.${NC}"
             sleep 2
             continue
